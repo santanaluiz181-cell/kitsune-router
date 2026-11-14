@@ -83,8 +83,21 @@ npm run audit:gates
 | :--- | :--- |
 | `node` nao reconhecido | Reinstale Node 24+ e reabra o terminal |
 | Porta 4319 ocupada | Outro Kitsune ja esta rodando; use-o |
+| Painel sem imagens/mascote, modo escuro nao muda, nada clica | Quase sempre e uma **instancia antiga** do Kitsune presa na porta 4319 servindo codigo velho. De duplo clique em `start-kitsune.bat` (ele mata a antiga e sobe a nova) e aperte `Ctrl+F5` no navegador |
+| `ERRO: porta 4319 ja esta em uso` | Rode o comando que a propria mensagem mostra, ou use `--port 4320` |
 | Tudo retorna 429 | Todas as chaves esgotaram a cota; aguarde o `Retry-After` ou adicione mais contas |
-| Prompt bloqueado | Era `confidential` e so ha chaves free; use Ollama ou chave paga |
+| Prompt bloqueado | Era `confidential` e so ha chaves free; use Ollama ou chave paga, ou marque como `public` |
+
+## Usar chave gratuita mesmo com dados revisados pelo Google
+
+Pode, sem problema. O PrivacyGuard so bloqueia prompts marcados como `confidential`. O padrao ja e `defaultSensitivity: public`, entao chaves free funcionam direto. Tenha em mente que o Google pode revisar e treinar com o que passa por chaves free. Nao envie dados sensiveis por elas.
+
+## Passo extra: Antigravity IDE (MCP)
+
+1. Abra o Antigravity, va em **Settings > MCP Servers > Manage / View raw config** (arquivo `mcp_config.json`).
+2. Cole o bloco do Passo 7 com o caminho absoluto da pasta, usando `/` e sem erros de digitacao.
+3. Salve e reinicie o Antigravity. As ferramentas `kitsune_route_prompt` etc. aparecem na lista de MCP.
+4. Se a pilula nao aparecer, rode `node src/cli.ts hud` ou abra `http://127.0.0.1:4319/?mode=pill`.
 
 ## Limite conhecido
 

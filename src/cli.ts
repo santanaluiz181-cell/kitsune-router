@@ -19,6 +19,19 @@ interface CliArgs {
   noHud: boolean;
 }
 
+function reportPortInUse(err: unknown, port: number): boolean {
+  if ((err as NodeJS.ErrnoException).code !== 'EADDRINUSE') {
+    return false;
+  }
+  process.stderr.write(
+    `ERRO: porta ${port} ja esta em uso por uma instancia ANTIGA do Kitsune (codigo velho, sem imagens).\n` +
+      `Feche-a e rode de novo:  powershell -Command "Get-NetTCPConnection -LocalPort ${port} -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }"\n` +
+      `Ou use outra porta:       node src/cli.ts serve --port ${port + 1}\n`
+  );
+  process.exitCode = 1;
+  return true;
+}
+
 function parseCliArgs(argv: string[]): CliArgs {
   const [command = 'serve', ...rest] = argv;
   let port: number | undefined;
@@ -90,6 +103,47 @@ async function startMcpSession(
   process.on('SIGTERM', () => void cleanup());
 }
 
+async function startGatewayServer(
+  orchestrator: RouterOrchestrator,
+  ledger: SqliteLedgerAdapter,
+  targetPort: number,
+  resolvedDataDir: string,
+  isHud: boolean
+): Promise<void> {
+  const cliEntryPath = fileURLToPath(import.meta.url);
+  const uiDir = path.join(path.resolve(path.dirname(cliEntryPath), '..'), 'src', 'ui');
+  const gateway = new HttpGatewayAdapter(orchestrator, {
+    port: targetPort,
+    uiDir,
+    cliEntryPath,
+    dataDir: resolvedDataDir
+  });
+
+  const activePort = await gateway.start().catch((err: unknown) => {
+    if (!reportPortInUse(err, targetPort)) throw err;
+    return -1;
+  });
+  if (activePort < 0) {
+    ledger.close();
+    return;
+  }
+  process.stdout.write(`Kitsune Router online em http://127.0.0.1:${activePort}\n`);
+  process.stdout.write(`Widget Pill HUD em http://127.0.0.1:${activePort}/?mode=pill\n`);
+  process.stdout.write(`Endpoint OpenAI /v1 em http://127.0.0.1:${activePort}/v1\n`);
+
+  if (isHud) {
+    await launchPillWindow(activePort, resolvedDataDir, { force: true });
+  }
+
+  const shutdown = async () => {
+    await gateway.stop();
+    ledger.close();
+    process.exit(0);
+  };
+  process.on('SIGINT', () => void shutdown());
+  process.on('SIGTERM', () => void shutdown());
+}
+
 async function main(): Promise<void> {
   const { command, port, dataDir, noHud } = parseCliArgs(process.argv.slice(2));
   const resolvedDataDir = resolveKitsuneDataDir(dataDir);
@@ -103,13 +157,11 @@ async function main(): Promise<void> {
     await startMcpSession(orchestrator, ledger, targetPort, resolvedDataDir, noHud);
     return;
   }
-
   if (command === 'status') {
     process.stdout.write(`${JSON.stringify(orchestrator.getStateSnapshot(10), null, 2)}\n`);
     ledger.close();
     return;
   }
-
   if (command === 'hud' && (await isGatewayListening(targetPort))) {
     const res = await launchPillWindow(targetPort, resolvedDataDir, { force: true });
     process.stdout.write(`${res.reason}: ${res.url}\n`);
@@ -117,30 +169,8 @@ async function main(): Promise<void> {
     return;
   }
 
-  const cliEntryPath = fileURLToPath(import.meta.url);
-  const uiDir = path.join(path.resolve(path.dirname(cliEntryPath), '..'), 'src', 'ui');
-  const gateway = new HttpGatewayAdapter(orchestrator, {
-    port: targetPort,
-    uiDir,
-    cliEntryPath,
-    dataDir: resolvedDataDir
-  });
-
-  const activePort = await gateway.start();
-  process.stdout.write(`Kitsune Router online em http://127.0.0.1:${activePort}\n`);
-  process.stdout.write(`Widget Pill HUD em http://127.0.0.1:${activePort}/?mode=pill\n`);
-  process.stdout.write(`Endpoint OpenAI /v1 em http://127.0.0.1:${activePort}/v1\n`);
-
-  if (command === 'hud') {
-    await launchPillWindow(activePort, resolvedDataDir, { force: true });
-  }
-
-  const shutdown = async () => {
-    await gateway.stop();
-    ledger.close();
-    process.exit(0);
-  };
-  process.on('SIGINT', () => void shutdown());
+  await startGatewayServer(orchestrator, ledger, targetPort, resolvedDataDir, command === 'hud');
+}
   process.on('SIGTERM', () => void shutdown());
 }
 
