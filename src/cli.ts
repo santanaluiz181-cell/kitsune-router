@@ -171,7 +171,5 @@ async function main(): Promise<void> {
 
   await startGatewayServer(orchestrator, ledger, targetPort, resolvedDataDir, command === 'hud');
 }
-  process.on('SIGTERM', () => void shutdown());
-}
 
 void main();
