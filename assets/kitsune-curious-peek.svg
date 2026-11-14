@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 165" role="img" aria-label="Curious Kitsune peeking around terminal corner">
+  <defs>
+    <clipPath id="peek-card-clip"><rect x="6" y="8" width="268" height="148" rx="14"/></clipPath>
+    <clipPath id="peek-eye-clip"><circle cx="0" cy="0" r="4.55"/></clipPath>
+    <style>
+      .peek-motion { animation: peekSlide 5.2s ease-in-out infinite; transform-origin: 42px 56px; }
+      .peek-tail { animation: peekTail 1.15s ease-in-out infinite; transform-origin: 60px 50px; }
+      .peek-ear-l { animation: peekEarL 3.2s ease-in-out infinite; transform-origin: 27px 23px; }
+      .peek-ear-r { animation: peekEarR 3.2s ease-in-out infinite; transform-origin: 57px 23px; }
+      .peek-pupils { animation: scanCorners 5.2s ease-in-out infinite; }
+      .peek-lid { animation: peekBlink 4.1s ease-in-out infinite; transform-origin: 0px 0px; }
+      .code-glow { animation: pulseEdge 2.9s ease-in-out infinite; }
+      @keyframes peekSlide {
+        0%, 100% { transform: translateX(3px) rotate(-5deg); }
+        35%, 65% { transform: translateX(-4px) rotate(1.5deg); }
+      }
+      @keyframes peekTail {
+        0%, 100% { transform: rotate(-7deg); }
+        50% { transform: rotate(12deg); }
+      }
+      @keyframes peekEarL {
+        0%, 76%, 100% { transform: rotate(0deg); }
+        85% { transform: rotate(-9deg); }
+      }
+      @keyframes peekEarR {
+        0%, 76%, 100% { transform: rotate(0deg); }
+        85% { transform: rotate(8deg); }
+      }
+      @keyframes scanCorners {
+        0%, 18% { transform: translate(-1.35px, -0.2px); }
+        36%, 54% { transform: translate(-1.1px, 0.85px); }
+        68%, 84% { transform: translate(1.1px, -0.5px); }
+        100% { transform: translate(-1.35px, -0.2px); }
+      }
+      @keyframes peekBlink {
+        0%, 91%, 96%, 100% { transform: scaleY(1); }
+        93.5% { transform: scaleY(0.08); }
+      }
+      @keyframes pulseEdge {
+        0%, 100% { stroke-opacity: 0.5; }
+        50% { stroke-opacity: 0.95; }
+      }
+    </style>
+  </defs>
+
+  <rect x="6" y="8" width="268" height="148" rx="14" fill="#151518" stroke="#FF7D26" stroke-width="2.2" class="code-glow"/>
+  <g clip-path="url(#peek-card-clip)">
+    <!-- Mini terminal card on left -->
+    <rect x="14" y="18" width="134" height="128" rx="8" fill="#0D0D0F" stroke="#3D3632" stroke-width="1.5"/>
+    <circle cx="26" cy="30" r="3.4" fill="#F87171"/><circle cx="36" cy="30" r="3.4" fill="#FF7D26"/><circle cx="46" cy="30" r="3.4" fill="#10B981"/>
+    <text x="22" y="52" font-family="'JetBrains Mono',Consolas,monospace" font-size="9.5" font-weight="800" fill="#FDBA74">$ kitsune mcp</text>
+    <text x="22" y="70" font-family="'JetBrains Mono',Consolas,monospace" font-size="8.4" fill="#D4CBC3">slot: google-oauth</text>
+    <text x="22" y="86" font-family="'JetBrains Mono',Consolas,monospace" font-size="8.4" fill="#34D399">status: 200 OK</text>
+    <text x="22" y="102" font-family="'JetBrains Mono',Consolas,monospace" font-size="8.4" fill="#FF7D26">hud: LIVE PILL</text>
+    <text x="22" y="118" font-family="'JetBrains Mono',Consolas,monospace" font-size="8.4" fill="#9CA3AF">429: auto-rotate</text>
+
+    <!-- Speech tag above peeking fox -->
+    <g transform="translate(154 14)">
+      <rect x="0" y="0" width="106" height="22" rx="6" fill="#271810" stroke="#FF7D26" stroke-width="1.3"/>
+      <text x="53" y="14.5" text-anchor="middle" font-family="'JetBrains Mono',Consolas,monospace" font-size="8.8" font-weight="800" fill="#FDBA74">Watching quotas!</text>
+    </g>
+
+    <ellipse cx="204" cy="144" rx="44" ry="6.5" fill="#000000" opacity="0.55"/>
+
+    <!-- Static outer position group so CSS animations stay 100% locked to face/body -->
+    <g transform="translate(132 40) scale(1.72)">
+      <g class="peek-motion">
+        <!-- Tail -->
+        <g class="peek-tail">
+          <path d="M60 53.5 C71.5 53.5 76.8 45.2 77.2 33.8 C77.6 29.8 79.4 27.2 81.8 25.5 C73.2 24.4 65.2 27.6 62.2 37.0 L59.5 47.0 Z" fill="none" stroke="#585C63" stroke-width="5.2" stroke-linejoin="round"/>
+          <path d="M60 53.5 C71.5 53.5 76.8 45.2 77.2 33.8 C77.6 29.8 79.4 27.2 81.8 25.5 C73.2 24.4 65.2 27.6 62.2 37.0 L59.5 47.0 Z" fill="#EE7522"/>
+          <path d="M66.2 33.2 L69.2 36.2 L71.8 32.8 L74.6 36.6 L77.4 33.8 C77.8 30.2 79.6 27.2 81.8 25.5 C74.4 24.6 68.8 27.4 66.2 33.2 Z" fill="#FFFFFF"/>
+          <path d="M60 53.5 C71.5 53.5 76.8 45.2 77.2 33.8 C77.6 29.8 79.4 27.2 81.8 25.5 C73.2 24.4 65.2 27.6 62.2 37.0 L59.5 47.0 Z" fill="none" stroke="#2B2E33" stroke-width="2.5" stroke-linejoin="round"/>
+        </g>
+        <!-- Ears -->
+        <g class="peek-ear-l">
+          <path d="M20.2 28.5 C17.8 20.5 18.2 13.0 20.6 7.5 C26.6 9.8 31.8 14.4 34.8 19.6 Z" fill="none" stroke="#585C63" stroke-width="5.2" stroke-linejoin="round"/>
+          <path d="M20.2 28.5 C17.8 20.5 18.2 13.0 20.6 7.5 C26.6 9.8 31.8 14.4 34.8 19.6 Z" fill="#EE7522" stroke="#2B2E33" stroke-width="2.6" stroke-linejoin="round"/>
+          <path d="M21.8 25.5 C20.4 20.4 20.6 15.0 22.0 11.4 C25.6 13.2 29.0 16.4 31.2 20.4 Z" fill="#FAF0DE"/>
+        </g>
+        <g class="peek-ear-r">
+          <path d="M63.8 28.5 C66.2 20.5 65.8 13.0 63.4 7.5 C57.4 9.8 52.2 14.4 49.2 19.6 Z" fill="none" stroke="#585C63" stroke-width="5.2" stroke-linejoin="round"/>
+          <path d="M63.8 28.5 C66.2 20.5 65.8 13.0 63.4 7.5 C57.4 9.8 52.2 14.4 49.2 19.6 Z" fill="#EE7522" stroke="#2B2E33" stroke-width="2.6" stroke-linejoin="round"/>
+          <path d="M62.2 25.5 C63.6 20.4 63.4 15.0 62.0 11.4 C58.4 13.2 55.0 16.4 52.8 20.4 Z" fill="#FAF0DE"/>
+        </g>
+        <!-- Body -->
+        <path d="M33.5 19.2 C38.8 17.2 45.2 17.2 50.5 19.2 C57.5 22.4 62.5 29.5 64.5 34.4 Q67.6 37.0 67.8 39.2 C67.5 41.2 65.4 42.8 64.2 44.4 C64.2 51.6 63.8 55.8 62.4 58.6 C61.2 60.4 59.0 60.6 55.5 60.6 L28.5 60.6 C25.0 60.6 22.8 60.4 21.6 58.6 C20.2 55.8 19.8 51.6 19.8 44.4 C18.6 42.8 16.5 41.2 16.2 39.2 Q16.4 37.0 19.5 34.4 C21.5 29.5 26.5 22.4 33.5 19.2 Z" fill="none" stroke="#585C63" stroke-width="5.2" stroke-linejoin="round"/>
+        <path d="M33.5 19.2 C38.8 17.2 45.2 17.2 50.5 19.2 C57.5 22.4 62.5 29.5 64.5 34.4 Q67.6 37.0 67.8 39.2 C67.5 41.2 65.4 42.8 64.2 44.4 C64.2 51.6 63.8 55.8 62.4 58.6 C61.2 60.4 59.0 60.6 55.5 60.6 L28.5 60.6 C25.0 60.6 22.8 60.4 21.6 58.6 C20.2 55.8 19.8 51.6 19.8 44.4 C18.6 42.8 16.5 41.2 16.2 39.2 Q16.4 37.0 19.5 34.4 C21.5 29.5 26.5 22.4 33.5 19.2 Z" fill="#EE7522"/>
+        <path d="M17.0 39.0 C22.5 36.2 27.6 36.4 32.5 37.8 C36.8 39.0 40.0 37.4 42.0 37.4 C44.0 37.4 47.2 39.0 51.5 37.8 C56.4 36.4 61.5 36.2 67.0 39.0 L63.8 44.2 C58.5 47.8 54.0 49.4 51.2 49.8 L50.8 52.8 L48.2 51.8 L47.0 54.8 L44.4 53.6 L42.0 57.0 L39.6 53.6 L37.0 54.8 L35.8 51.8 L33.2 52.8 L32.8 49.8 C30.0 49.4 25.5 47.8 20.2 44.2 Z" fill="#FFFFFF"/>
+        <path d="M33.5 19.2 C38.8 17.2 45.2 17.2 50.5 19.2 C57.5 22.4 62.5 29.5 64.5 34.4 Q67.6 37.0 67.8 39.2 C67.5 41.2 65.4 42.8 64.2 44.4 C64.2 51.6 63.8 55.8 62.4 58.6 C61.2 60.4 59.0 60.6 55.5 60.6 L28.5 60.6 C25.0 60.6 22.8 60.4 21.6 58.6 C20.2 55.8 19.8 51.6 19.8 44.4 C18.6 42.8 16.5 41.2 16.2 39.2 Q16.4 37.0 19.5 34.4 C21.5 29.5 26.5 22.4 33.5 19.2 Z" fill="none" stroke="#2B2E33" stroke-width="2.6" stroke-linejoin="round"/>
+        <path d="M19.8 44.0 C24.5 48.0 30.2 49.8 34.4 50.3" fill="none" stroke="#2B2E33" stroke-width="2.3" stroke-linecap="round"/>
+        <path d="M64.2 44.0 C59.5 48.0 53.8 49.8 49.6 50.3" fill="none" stroke="#2B2E33" stroke-width="2.3" stroke-linecap="round"/>
+        <ellipse cx="26.0" cy="59.6" rx="5.0" ry="2.2" fill="#583722" stroke="#2B2E33" stroke-width="1.6"/>
+        <ellipse cx="58.0" cy="59.6" rx="5.0" ry="2.2" fill="#583722" stroke="#2B2E33" stroke-width="1.6"/>
+        <!-- Face + properly nested eye groups -->
+        <ellipse cx="24.2" cy="44.2" rx="4.1" ry="1.65" fill="#F39EA8"/>
+        <ellipse cx="59.8" cy="44.2" rx="4.1" ry="1.65" fill="#F39EA8"/>
+        <g transform="translate(31.6 33.8)">
+          <g class="peek-lid">
+            <circle r="6.6" fill="#2B2E33"/><circle r="4.65" fill="#FFFFFF"/>
+            <g clip-path="url(#peek-eye-clip)"><g class="peek-pupils">
+              <circle r="3.75" fill="#121417"/><circle cx="-1.25" cy="-1.2" r="1.42" fill="#FFFFFF"/><circle cx="1.45" cy="1.38" r="0.68" fill="#FFFFFF"/>
+            </g></g>
+          </g>
+        </g>
+        <g transform="translate(52.4 33.8)">
+          <g class="peek-lid">
+            <circle r="6.6" fill="#2B2E33"/><circle r="4.65" fill="#FFFFFF"/>
+            <g clip-path="url(#peek-eye-clip)"><g class="peek-pupils">
+              <circle r="3.75" fill="#121417"/><circle cx="-1.25" cy="-1.2" r="1.42" fill="#FFFFFF"/><circle cx="1.45" cy="1.38" r="0.68" fill="#FFFFFF"/>
+            </g></g>
+          </g>
+        </g>
+        <path d="M39.5 38.4 Q42 37.6 44.5 38.4 Q44.6 40.2 42 41.3 Q39.4 40.2 39.5 38.4 Z" fill="#2B2E33"/>
+        <path d="M42 41.1 L42 42.5 M38.2 42.2 C38.5 44.8 41.8 44.6 42 42.5 C42.2 44.6 45.5 44.8 45.8 42.2" fill="none" stroke="#2B2E33" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+    </g>
+  </g>
+</svg>

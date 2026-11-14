@@ -1,0 +1,16 @@
+node_modules/
+.kitsune-data/
+data/
+*.enc.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-wal
+*.db-shm
+*.log
+.env
+.env.*
+coverage/
+.DS_Store
+Thumbs.db

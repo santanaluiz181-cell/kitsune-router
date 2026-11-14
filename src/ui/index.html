@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kitsune Router · Antigravity HUD</title>
+  <link rel="icon" href="/kitsune-logo.png" type="image/png">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="notch-stage">
+    <aside id="notchPill" class="compact-pill" aria-label="Widget Flutuante Kitsune HUD">
+      <div class="pill-left">
+        <span id="pillAura" class="aura-dot" data-mood="idle" aria-hidden="true"></span>
+        <div id="pillKitsune" class="pill-fox" title="Kitsune ao vivo no Pill HUD"></div>
+        <div class="pill-brand-col">
+          <div class="pill-brand-row">
+            <strong class="pill-brand">KITSUNE</strong>
+            <span class="pill-ver">MCP HUD</span>
+          </div>
+          <span id="pillStatusText" class="pill-status">Antigravity · Aguardando</span>
+        </div>
+      </div>
+      <div class="pill-center">
+        <span class="pill-stat"><b id="pillOk">0</b> OK</span>
+        <span class="pill-sep" aria-hidden="true">|</span>
+        <span class="pill-stat"><b id="pillTok">0</b> TOK</span>
+        <span id="pillModel" class="pill-model" title="Modelo ativo no roteador">gemini-2.5-flash</span>
+        <span id="pillMood" class="pill-mood">IDLE</span>
+      </div>
+      <div class="pill-actions">
+        <button id="pillBeretBtn" class="pill-act" type="button" aria-pressed="false" title="Alternar Boina PRESS na Kitsune">PRESS</button>
+        <button id="pillThemeBtn" class="pill-act" type="button" title="Alternar tema Claro e Escuro">☀/🌙</button>
+        <button id="pillOpenBoardBtn" class="pill-act" type="button" title="Abrir painel completo">Painel</button>
+        <button id="pillToggleBtn" class="pill-act expand" type="button" aria-expanded="true" title="Recolher ou expandir painel">▲</button>
+      </div>
+    </aside>
+  </div>
+
+  <main id="expandedBoard" class="expanded-board">
+    <header class="masthead">
+      <div class="brand">
+        <div class="logo-box">
+          <img class="brand-logo" src="/kitsune-logo.png" width="46" height="46" alt="Mascote Kitsune">
+        </div>
+        <div class="brand-copy">
+          <div class="title-row">
+            <h1>KITSUNE ROUTER</h1>
+            <span class="ver-stamp">v2.2 · MULTI-CONTA</span>
+            <span id="conn" class="chip live" role="status">CONECTANDO</span>
+          </div>
+          <p class="sub">Roteador editorial multi-provedor · Google, Claude, DeepSeek · cofre DPAPI offline</p>
+        </div>
+      </div>
+      <div class="header-tray">
+        <button id="beretBtn" class="carimbo skin" type="button" aria-pressed="false">🎭 Boina PRESS</button>
+        <button id="pauseBtn" class="carimbo" type="button" aria-pressed="false">⚡ 60 FPS</button>
+        <button id="themeBtn" class="carimbo" type="button" aria-pressed="false">Tema escuro</button>
+        <button id="boardCollapseBtn" class="carimbo square" type="button" aria-label="Recolher painel para modo Notch">▲</button>
+      </div>
+    </header>
+
+    <hr class="divider-ink">
+
+    <nav class="dock-tabs" id="dockTabs" role="tablist" aria-label="Visões da bancada">
+      <button class="seg-tab active" type="button" role="tab" aria-selected="true" data-tab="all">PAINEL COMPLETO</button>
+      <button class="seg-tab" type="button" role="tab" aria-selected="false" data-tab="test">TESTAR ROTEADOR</button>
+      <button class="seg-tab" type="button" role="tab" aria-selected="false" data-tab="vault">COFRE DPAPI</button>
+      <button class="seg-tab" type="button" role="tab" aria-selected="false" data-tab="ledger">ANTIGRAVITY &amp; LOGS</button>
+    </nav>
+
+    <section class="gauge-strip" aria-label="Telemetria ao vivo">
+      <article class="gauge-card"><span>REQUISIÇÕES</span><strong id="mTotal">0</strong></article>
+      <article class="gauge-card highlight"><span>ATENDIDAS OK</span><strong id="mOk">0</strong></article>
+      <article class="gauge-card"><span>PRIVACY BLOQ.</span><strong id="mBlocked">0</strong></article>
+      <article class="gauge-card"><span>TOKENS TOTAIS</span><strong id="mTokens">0</strong></article>
+      <article class="gauge-card"><span>CUSTO USD</span><strong id="mCost">$0,00</strong></article>
+      <article class="gauge-card"><span>ECONOMIA USD</span><strong id="mSaved">$0,00</strong></article>
+    </section>
+
+    <div class="board-grid">
+      <section id="island" class="board-card mascot-card" data-mood="idle" data-tabs="all test" aria-label="Estágio interativo da Kitsune">
+        <div class="card-head">
+          <h2>00 // ESTÁGIO AO VIVO DA KITSUNE</h2>
+          <span id="moodBadge" class="stamp-tag">IDLE · EM GUARDA</span>
+        </div>
+        <p id="moodLine" class="mood-sub">Acompanhando seu cursor. As animações disparam por eventos reais do roteador.</p>
+        <div class="fox-viewport">
+          <div id="kitsune" class="fox-stage" title="Clique ou mova o cursor sobre a Kitsune"></div>
+        </div>
+        <div class="balloon-wrap">
+          <span class="balloon-prefix">[ 💬 KITSUNE: ]</span>
+          <span id="bubble" class="balloon-text" aria-live="polite">Pronta na bancada para rotacionar suas contas e APIs.</span>
+        </div>
+        <div class="event-legend" aria-label="Gatilhos automáticos">
+          <span class="ev-chip">Chave OK → Cofre</span>
+          <span class="ev-chip">Chave Erro → Lixo</span>
+          <span class="ev-chip">Espera → Soneca</span>
+          <span class="ev-chip">Acorda → Sustinho</span>
+          <span class="ev-chip">Sucesso → Dança</span>
+          <span class="ev-chip">Falha/Fallback → Tonta</span>
+        </div>
+      </section>
+
+      <div class="right-col" data-tabs="all test">
+        <section class="board-card" aria-labelledby="h-profile">
+          <div class="card-head">
+            <h2 id="h-profile">01 // PERFIL ATIVO &amp; PRIVACIDADE</h2>
+            <span id="profileMsg" class="hint" role="status"></span>
+          </div>
+          <form id="profileForm" class="profile-grid">
+            <label>Modelo alvo
+              <select id="activeModel"></select>
+            </label>
+            <label>Estratégia de rotação
+              <select id="policy">
+                <option value="economy">Econômico (grátis/local)</option>
+                <option value="balanced">Balanceado (grátis + pago)</option>
+                <option value="frontier">Qualidade máxima</option>
+                <option value="manual">Manual (por prioridade)</option>
+              </select>
+            </label>
+            <label>Sigilo padrão
+              <select id="sensitivity">
+                <option value="confidential">Sigiloso (nunca sai da máquina)</option>
+                <option value="public">Público (permite nuvem)</option>
+              </select>
+            </label>
+          </form>
+        </section>
+
+        <section class="board-card" aria-labelledby="h-play">
+          <div class="card-head">
+            <h2 id="h-play">02 // TESTAR ROTEADOR &amp; PLAYGROUND</h2>
+            <span class="badge-note">FAILOVER + PRIVACYGUARD</span>
+          </div>
+          <form id="pgForm">
+            <label>Prompt para envio ao roteador
+              <textarea id="pgPrompt" rows="3" placeholder="Ex: Compare Gemini 3.8 Pro, Claude Sonnet 4.5 e DeepSeek R1 para revisão de código."></textarea>
+            </label>
+            <div class="inline-row">
+              <label>Sigilo deste envio
+                <select id="pgSens">
+                  <option value="">Usar padrão do perfil</option>
+                  <option value="public">Público (permite nuvem/contas)</option>
+                  <option value="confidential">Sigiloso (trava PrivacyGuard local)</option>
+                </select>
+              </label>
+              <button id="pgBtn" class="carimbo accent" type="submit">Testar no roteador</button>
+            </div>
+          </form>
+          <div id="pgOut" class="pg-out" hidden aria-live="polite"></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="board-card section-gap" data-tabs="all vault" aria-labelledby="h-slots">
+      <div class="card-head">
+        <div>
+          <h2 id="h-slots">03 // COFRE DPAPI · CONTAS E CHAVES</h2>
+          <p class="sub">Chaves e tokens cifrados no Windows Vault DPAPI para Google OAuth, Gemini AI Studio, Claude, DeepSeek, OpenRouter e Ollama.</p>
+        </div>
+        <button id="addSlotBtn" class="carimbo accent" type="button" aria-expanded="false">+ ADICIONAR CONTA / CHAVE</button>
+      </div>
+
+      <div class="connect-strip" aria-label="Conexão rápida de contas oficiais">
+        <label>Portal oficial da conta ou plano pago
+          <select id="loginTarget">
+            <option value="google-oauth">Google Account (OAuth / Workspace)</option>
+            <option value="gemini-web">Google Gemini Web (3.8 Pro / 3.5 / Deep Research)</option>
+            <option value="google-ai-studio">Google AI Studio (API Key)</option>
+            <option value="anthropic">Claude Anthropic (Console / Plano)</option>
+            <option value="deepseek">DeepSeek Platform (V3 / Reasoner)</option>
+            <option value="openrouter">OpenRouter (Multi-Modelos)</option>
+          </select>
+        </label>
+        <button id="openLoginBtn" class="carimbo" type="button">Abrir login oficial</button>
+        <button id="importGeminiBtn" class="carimbo accent" type="button">Importar sessão Gemini CLI</button>
+        <span id="accountMsg" class="hint" role="status"></span>
+      </div>
+
+      <form id="slotForm" class="slot-form" hidden>
+        <div class="form-grid">
+          <label>Nome da conta<input id="sLabel" required placeholder="Minha Conta Google Pro / DeepSeek"></label>
+          <label>Provedor
+            <select id="sProvider">
+              <option value="google-ai-studio">Google AI Studio (API Key)</option>
+              <option value="google-oauth">Conta Google / Gemini OAuth (3.8 Pro / Deep Research)</option>
+              <option value="anthropic">Claude / Anthropic (Sonnet 4.5 / Opus 4)</option>
+              <option value="deepseek">DeepSeek (V3 / Reasoner R1)</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="ollama">Ollama (Local offline)</option>
+              <option value="openai-compat">OpenAI-compatível</option>
+            </select>
+          </label>
+          <label>Plano
+            <select id="sTier">
+              <option value="free">Gratuito</option>
+              <option value="paid">Pago</option>
+              <option value="local">Local</option>
+            </select>
+          </label>
+          <label>Chave API ou Token OAuth<input id="sSecret" type="password" autocomplete="off" placeholder="AIza..."></label>
+          <label>Prioridade<input id="sPriority" type="number" value="10" min="1" max="99"></label>
+          <label>URL base (opcional)<input id="sBase" placeholder="Padrão do provedor"></label>
+        </div>
+        <div class="inline-row">
+          <button class="carimbo accent" type="submit">Salvar no cofre</button>
+          <button id="cancelSlot" class="carimbo" type="button">Cancelar</button>
+          <span id="slotMsg" class="hint" role="status"></span>
+        </div>
+      </form>
+      <p id="slotsEmpty" class="empty">Nenhuma conta cadastrada. Clique em <b>+ ADICIONAR CONTA / CHAVE</b> ou importe sua sessão local.</p>
+      <ul id="slotList" class="slot-list"></ul>
+    </section>
+
+    <div class="bottom-grid section-gap" data-tabs="all ledger">
+      <section class="board-card" aria-labelledby="h-connect">
+        <div class="card-head">
+          <div>
+            <h2 id="h-connect">04 // ANTIGRAVITY MCP &amp; WIDGET PILL</h2>
+            <p class="sub">Ao conectar no Antigravity via MCP, o Widget Pill exibe a Kitsune e suas requisições ao vivo.</p>
+          </div>
+          <button id="openPillBtn" class="carimbo accent small" type="button">Abrir Pill Flutuante</button>
+        </div>
+        <span id="pillLaunchMsg" class="hint" role="status"></span>
+        <div class="code-box">
+          <div class="code-top"><span>mcp_config.json (Antigravity)</span><button class="carimbo small copy" data-copy="mcpSnippet" type="button">Copiar</button></div>
+          <pre id="mcpSnippet"></pre>
+        </div>
+        <div class="code-box">
+          <div class="code-top"><span>Endpoint OpenAI v1 &amp; Pill HUD</span><button class="carimbo small copy" data-copy="v1Snippet" type="button">Copiar</button></div>
+          <pre id="v1Snippet"></pre>
+        </div>
+      </section>
+
+      <section class="board-card" aria-labelledby="h-ledger">
+        <div class="card-head">
+          <div>
+            <h2 id="h-ledger">05 // HISTÓRICO RECENTE</h2>
+            <p class="sub">Auditoria com chaves mascaradas e latência por requisição.</p>
+          </div>
+          <button id="resetLedger" class="carimbo danger small" type="button">Zerar histórico</button>
+        </div>
+        <p id="ledgerEmpty" class="empty">Nenhuma requisição registrada ainda.</p>
+        <div class="table-wrap">
+          <table id="ledgerTable" hidden>
+            <thead><tr><th>Hora</th><th>Origem</th><th>Conta</th><th>Modelo</th><th>Estado</th><th class="num">Tokens</th><th class="num">Latência</th></tr></thead>
+            <tbody id="ledgerBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="confirmDlg">
+    <form method="dialog">
+      <h3>Remover chave do cofre?</h3>
+      <p id="dlgText">Essa conta será apagada deste computador.</p>
+      <div class="inline-row end">
+        <button class="carimbo" value="cancel">Manter</button>
+        <button class="carimbo danger" value="ok">Remover</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
