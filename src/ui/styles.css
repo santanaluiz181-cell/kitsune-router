@@ -498,3 +498,105 @@ dialog h3 { margin: 0 0 8px; font-family: var(--font-serif); }
   color: var(--danger);
   font-weight: 600;
 }
+
+/* WORKSPACE BAR & DRAWER */
+.workspace-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: var(--border-ink);
+  border-radius: 8px;
+  margin-top: 10px;
+}
+.ws-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+#chatWorkspaceSelect {
+  padding: 4px 8px;
+  border: var(--border-ink);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  color: var(--ink);
+  font-size: 12px;
+  max-width: 380px;
+}
+.ws-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+.chat-files-drawer {
+  background: var(--bg-card);
+  border: var(--border-ink);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12px;
+}
+.drawer-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.drawer-file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.drawer-file-row:hover {
+  background: rgba(255, 125, 38, 0.1);
+}
+.carimbo-mini {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: var(--bg-surface);
+  border: var(--border-ink);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.carimbo-mini:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.save-file-btn {
+  margin-left: auto;
+}
+.code-lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

@@ -169,6 +169,30 @@
         </div>
       </div>
 
+      <div class="workspace-bar" aria-label="Integração de Arquivos do Antigravity">
+        <div class="ws-select-wrap">
+          <label for="chatWorkspaceSelect">📂 Projeto Antigravity:</label>
+          <select id="chatWorkspaceSelect">
+            <option value="">Detectando projetos do Antigravity...</option>
+          </select>
+        </div>
+        <div class="ws-actions">
+          <button id="chatExploreFilesBtn" class="carimbo" type="button">📁 Explorar Arquivos</button>
+          <label class="toggle-pill" title="Respostas ricas, sem clichês de IA e com ritmo humano natural (Eesel AI)">
+            <input type="checkbox" id="chatHumanModeToggle" checked>
+            <span>🔥 Modo Humano Eesel</span>
+          </label>
+        </div>
+      </div>
+
+      <div id="chatFilesDrawer" class="chat-files-drawer" hidden>
+        <div class="drawer-header">
+          <span id="drawerTitle">Arquivos do Projeto</span>
+          <button id="closeDrawerBtn" class="carimbo-mini" type="button">✖ Fechar</button>
+        </div>
+        <div id="drawerFileList" class="drawer-file-list"></div>
+      </div>
+
       <div class="chat-container">
         <div id="chatMessages" class="chat-messages" role="log" aria-live="polite">
           <div class="chat-bubble kitsune-bubble intro-msg">
@@ -177,11 +201,11 @@
               <span class="bubble-tag">ONLINE · COTA INDEPENDENTE</span>
             </div>
             <div class="bubble-body">
-              <p>Olá! Este é seu ambiente de chat direto. Pode conversar comigo normalmente por aqui! As mensagens são processadas pelas chaves cadastradas no seu cofre DPAPI com failover 429 automático, sem consumir sua cota do Antigravity.</p>
+              <p>Olá! Este é seu ambiente de chat direto integrado aos projetos do Antigravity. As mensagens são processadas pelas chaves cadastradas no seu cofre DPAPI com failover 429 automático, sem consumir sua cota da IDE.</p>
               <div class="quick-prompts">
+                <button type="button" class="quick-pill" data-prompt="Liste os arquivos e a arquitetura geral do projeto ativo">📂 Analisar este projeto</button>
                 <button type="button" class="quick-pill" data-prompt="Crie um script TypeScript para demonstrar o uso do Kitsune Router">💡 Exemplo TypeScript</button>
                 <button type="button" class="quick-pill" data-prompt="Como funciona a rotação automática quando uma conta recebe erro HTTP 429?">🛡️ Explique o 429 Failover</button>
-                <button type="button" class="quick-pill" data-prompt="Escreva uma função moderna em Python para processamento de dados">🐍 Função Python</button>
               </div>
             </div>
           </div>
@@ -193,7 +217,7 @@
             <button id="chatSendBtn" class="carimbo accent chat-send-btn" type="submit">Enviar ↵</button>
           </div>
           <div class="chat-bar-meta">
-            <span id="chatStreamStatus" class="chat-status-indicator">⚡ Streaming SSE ativo · Totalmente independente</span>
+            <span id="chatStreamStatus" class="chat-status-indicator">⚡ Streaming SSE ativo · Acesso a arquivos habilitado</span>
             <span id="chatTokensCounter" class="chat-tokens-meta">0 msgs</span>
           </div>
         </form>

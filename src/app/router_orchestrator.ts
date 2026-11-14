@@ -1,3 +1,4 @@
+import { composeHumanSystemPrompt } from '../domain/human_prompt_engine.ts';
 import { MODEL_CATALOG } from '../domain/model_catalog.ts';
 import { estimateCostUsd, evaluateFailure, markSlotHealthy, selectRoute } from '../domain/router_engine.ts';
 import type {
@@ -192,11 +193,17 @@ export class RouterOrchestrator {
 
   async executeCompletion(input: ExecuteCompletionInput): Promise<ExecuteCompletionResult> {
     const config = this.vault.getConfig();
+    const rawMessages = Array.isArray(input.messages) ? input.messages : [];
+    const hasSys = rawMessages.some((m) => m.role === 'system');
+    const enrichedMessages = hasSys
+      ? rawMessages.map((m) => (m.role === 'system' ? { ...m, content: composeHumanSystemPrompt(m.content) } : m))
+      : [{ role: 'system' as const, content: composeHumanSystemPrompt() }, ...rawMessages];
+
     const routeReq: RouteRequest = {
       requestedModel: cleanString(input.requestedModel) || config.activeModelId,
       policy: input.policy ?? config.policy,
       sensitivity: input.sensitivity ?? config.defaultSensitivity,
-      messages: Array.isArray(input.messages) ? input.messages : [],
+      messages: enrichedMessages,
       temperature: input.temperature,
       maxTokens: input.maxTokens
     };

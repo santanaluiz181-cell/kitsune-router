@@ -31,6 +31,12 @@ import {
 } from './gateway_helpers.ts';
 import { launchPillWindow } from './pill_hud_adapter.ts';
 import { openOfficialLoginBrowser, readGeminiCliOAuthCreds } from './session_connect_adapter.ts';
+import {
+  findKnownWorkspaces,
+  listWorkspaceFiles,
+  readWorkspaceFileSafe,
+  writeWorkspaceFileSafe
+} from './antigravity_workspace_adapter.ts';
 
 const STATIC_FILES: Readonly<Record<string, { file: string; mime: string }>> = {
   '/': { file: 'index.html', mime: 'text/html; charset=utf-8' },
@@ -140,7 +146,7 @@ export class HttpGatewayAdapter {
         return;
       }
       if (pathname.startsWith('/api/')) {
-        await this.handleControlRoute(req, res, pathname);
+        await this.handleControlRoute(req, res, pathname, urlObj);
         return;
       }
       sendJson(res, 404, { error: { message: 'Endpoint nao encontrado', code: 'NOT_FOUND' } });
@@ -229,7 +235,59 @@ export class HttpGatewayAdapter {
     sendJson(res, 200, buildOpenAiCompletionJson(outcome));
   }
 
-  private async handleControlRoute(req: IncomingMessage, res: ServerResponse, pathname: string): Promise<void> {
+  private async handleWorkspaceRoutes(
+    req: IncomingMessage,
+    res: ServerResponse,
+    pathname: string,
+    urlObj: URL
+  ): Promise<boolean> {
+  if (req.method === 'GET' && pathname === '/api/workspaces') {
+    sendJson(res, 200, { workspaces: findKnownWorkspaces() });
+    return true;
+  }
+  if (req.method === 'GET' && pathname === '/api/workspaces/tree') {
+    const ws = urlObj.searchParams.get('path');
+    if (!ws) {
+      sendJson(res, 400, { error: { message: 'Parametro path obrigatorio' } });
+      return true;
+    }
+    sendJson(res, 200, { files: listWorkspaceFiles(ws, 120) });
+    return true;
+  }
+  if (req.method === 'POST' && pathname === '/api/workspaces/read') {
+    const body = await readJsonBody(req);
+    try {
+      const content = await readWorkspaceFileSafe(String(body.workspacePath), String(body.relativePath));
+      sendJson(res, 200, { content });
+    } catch (err: unknown) {
+      sendJson(res, 400, { error: { message: (err as Error).message } });
+    }
+    return true;
+  }
+  if (req.method === 'POST' && pathname === '/api/workspaces/write') {
+    const body = await readJsonBody(req);
+    try {
+      const result = await writeWorkspaceFileSafe(
+        String(body.workspacePath),
+        String(body.relativePath),
+        String(body.content)
+      );
+      sendJson(res, 200, result);
+    } catch (err: unknown) {
+      sendJson(res, 400, { error: { message: (err as Error).message } });
+    }
+    return true;
+  }
+  return false;
+}
+
+  private async handleControlRoute(
+    req: IncomingMessage,
+    res: ServerResponse,
+    pathname: string,
+    urlObj: URL
+  ): Promise<void> {
+    if (await this.handleWorkspaceRoutes(req, res, pathname, urlObj)) return;
     if (req.method === 'GET' && pathname === '/api/state') {
       const snapshot = this.orchestrator.getStateSnapshot(35);
       sendJson(res, 200, { ...snapshot, integration: buildIntegrationSnippets(this.boundPort, this.cliEntryPath) });

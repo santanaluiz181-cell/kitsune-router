@@ -1,8 +1,9 @@
 // Kitsune Chat Web - Interface Conversacional 100% Independente da IDE
-// Conecta direto ao gateway local /v1/chat/completions com Streaming SSE
+// Integracao de Workspaces Antigravity, Streaming SSE e Diretiva Eesel AI
 
 const history = [];
 let isStreaming = false;
+let currentWorkspace = '';
 
 function escapeHtml(text) {
   const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -15,7 +16,12 @@ function formatContent(text) {
     if (part.startsWith('```') && part.endsWith('```')) {
       const firstLine = part.slice(3, part.indexOf('\n')).trim();
       const code = part.slice(part.indexOf('\n') + 1, -3);
-      return `<div class="code-block-wrap"><div class="code-lang">${escapeHtml(firstLine || 'code')}</div><pre><code>${escapeHtml(code)}</code></pre></div>`;
+      const filePathMatch = firstLine.match(/(?:file|path|arquivo):\s*([^\s]+)/i);
+      const filePath = filePathMatch ? filePathMatch[1] : '';
+      const saveBtn = filePath
+        ? `<button type="button" class="carimbo-mini save-file-btn" data-file="${escapeHtml(filePath)}">💾 Salvar em ${escapeHtml(filePath)}</button>`
+        : '';
+      return `<div class="code-block-wrap"><div class="code-lang"><span>${escapeHtml(firstLine || 'code')}</span>${saveBtn}</div><pre><code class="raw-code">${escapeHtml(code)}</code></pre></div>`;
     }
     return escapeHtml(part).replace(/\n/g, '<br>');
   }).join('');
@@ -36,38 +42,101 @@ function appendBubble(role, content, meta = {}) {
   if (!container) return null;
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${role === 'user' ? 'user-bubble' : 'kitsune-bubble'}`;
-  
   const author = role === 'user' ? '👤 Você' : '🦊 Kitsune';
   const tag = meta.model ? `<span class="bubble-tag">${escapeHtml(meta.model)}</span>` : '';
-  
-  bubble.innerHTML = `
-    <div class="bubble-header">
-      <span class="bubble-author">${author}</span>
-      ${tag}
-    </div>
-    <div class="bubble-body">${formatContent(content)}</div>
-  `;
+  bubble.innerHTML = `<div class="bubble-header"><span class="bubble-author">${author}</span>${tag}</div><div class="bubble-body">${formatContent(content)}</div>`;
   container.appendChild(bubble);
   scrollToBottom();
   return bubble;
 }
 
-async function populateModels() {
-  const sel = document.getElementById('chatModelSelect');
-  if (!sel) return;
+async function populateModelsAndWorkspaces() {
+  const selModel = document.getElementById('chatModelSelect');
+  const selWs = document.getElementById('chatWorkspaceSelect');
   try {
-    const res = await fetch('/api/state');
-    const data = await res.json();
-    if (data?.catalog) {
-      sel.innerHTML = data.catalog.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}</option>`).join('');
-      if (data.config?.activeModelId) sel.value = data.config.activeModelId;
+    const stateRes = await fetch('/api/state').then((r) => r.json());
+    if (selModel && stateRes?.catalog) {
+      selModel.innerHTML = stateRes.catalog.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}</option>`).join('');
+      if (stateRes.config?.activeModelId) selModel.value = stateRes.config.activeModelId;
     }
-  } catch {
-    sel.innerHTML = '<option value="gemini-3.8-pro">Gemini 3.8 Pro (Google)</option>';
+  } catch {}
+
+  try {
+    const wsRes = await fetch('/api/workspaces').then((r) => r.json());
+    if (selWs && wsRes?.workspaces?.length) {
+      selWs.innerHTML = wsRes.workspaces.map((w) => `<option value="${escapeHtml(w.path)}">${escapeHtml(w.name)} (${escapeHtml(w.path)})</option>`).join('');
+      currentWorkspace = wsRes.workspaces[0].path;
+    }
+  } catch {}
+}
+
+async function loadWorkspaceTree(wsPath) {
+  const listEl = document.getElementById('drawerFileList');
+  const drawer = document.getElementById('chatFilesDrawer');
+  if (!listEl || !drawer) return;
+  drawer.hidden = false;
+  listEl.innerHTML = '<span class="hint">Carregando arquivos do projeto...</span>';
+  try {
+    const res = await fetch(`/api/workspaces/tree?path=${encodeURIComponent(wsPath)}`).then((r) => r.json());
+    if (!res.files?.length) {
+      listEl.innerHTML = '<span class="hint">Nenhum arquivo encontrado.</span>';
+      return;
+    }
+    listEl.innerHTML = res.files.map((f) => `
+      <div class="drawer-file-row ${f.isDirectory ? 'is-dir' : 'is-file'}">
+        <span class="file-name">${f.isDirectory ? '📁' : '📄'} ${escapeHtml(f.relativePath)}</span>
+        ${!f.isDirectory ? `<button type="button" class="carimbo-mini attach-file-btn" data-rel="${escapeHtml(f.relativePath)}">+ Anexar</button>` : ''}
+      </div>
+    `).join('');
+  } catch (err) {
+    listEl.innerHTML = `<span class="err-text">Erro ao ler arquivos: ${escapeHtml(err.message)}</span>`;
   }
 }
 
-async function handleStreamResponse(res, bubbleBody, modelId, startTime) {
+async function attachFileToChat(relPath) {
+  const input = document.getElementById('chatInput');
+  const ws = document.getElementById('chatWorkspaceSelect')?.value || currentWorkspace;
+  if (!input || !ws) return;
+  try {
+    const res = await fetch('/api/workspaces/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspacePath: ws, relativePath: relPath })
+    }).then((r) => r.json());
+    if (res.content) {
+      const snippet = `\n[Contexto do Arquivo: ${relPath}]\n\`\`\`\n${res.content.slice(0, 4000)}\n\`\`\`\n`;
+      input.value = (input.value ? input.value + '\n' : '') + snippet;
+      input.focus();
+      document.getElementById('chatFilesDrawer').hidden = true;
+    }
+  } catch (err) {
+    alert(`Erro ao ler arquivo: ${err.message}`);
+  }
+}
+
+async function saveFileDirectly(relPath, rawCode) {
+  const ws = document.getElementById('chatWorkspaceSelect')?.value || currentWorkspace;
+  if (!ws) {
+    alert('Selecione um projeto Antigravity ativo primeiro.');
+    return;
+  }
+  try {
+    const res = await fetch('/api/workspaces/write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspacePath: ws, relativePath: relPath, content: rawCode })
+    }).then((r) => r.json());
+    if (res.ok) {
+      alert(`Arquivo ${relPath} gravado com sucesso no projeto (${res.sizeBytes} bytes)!`);
+    } else {
+      alert(`Erro ao gravar arquivo: ${res.error?.message || 'Falha'}`);
+    }
+  } catch (err) {
+    alert(`Erro ao salvar: ${err.message}`);
+  }
+}
+
+async function handleStreamResponse(res, bubbleBody, modelId) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder('utf-8');
   let accumulated = '';
@@ -91,13 +160,10 @@ async function handleStreamResponse(res, bubbleBody, modelId, startTime) {
         accumulated += delta;
         bubbleBody.innerHTML = formatContent(accumulated);
         scrollToBottom();
-      } catch {
-        // Ignora chunks incompletos
-      }
+      } catch {}
     }
   }
 
-  const elapsed = Date.now() - startTime;
   history.push({ role: 'assistant', content: accumulated });
   updateMessageCount();
   window.fox?.setMood?.('celebrating');
@@ -108,6 +174,7 @@ async function submitChat(prompt) {
   const input = document.getElementById('chatInput');
   const btn = document.getElementById('chatSendBtn');
   const modelSel = document.getElementById('chatModelSelect');
+  const humanToggle = document.getElementById('chatHumanModeToggle');
   const modelId = modelSel?.value || 'gemini-3.8-pro';
 
   history.push({ role: 'user', content: prompt });
@@ -121,12 +188,14 @@ async function submitChat(prompt) {
 
   const botBubble = appendBubble('assistant', 'Pensando...', { model: modelId });
   const bubbleBody = botBubble.querySelector('.bubble-body');
-  const startTime = Date.now();
 
   try {
     const res = await fetch('/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-kitsune-human-mode': humanToggle?.checked !== false ? '1' : '0'
+      },
       body: JSON.stringify({
         model: modelId,
         stream: true,
@@ -142,7 +211,7 @@ async function submitChat(prompt) {
       return;
     }
 
-    await handleStreamResponse(res, bubbleBody, modelId, startTime);
+    await handleStreamResponse(res, bubbleBody, modelId);
   } catch (err) {
     bubbleBody.innerHTML = `<span class="err-text">❌ Falha na conexão: ${escapeHtml(err.message)}</span>`;
     window.fox?.setMood?.('dizzy');
@@ -157,6 +226,9 @@ function initChatListeners() {
   const form = document.getElementById('chatForm');
   const input = document.getElementById('chatInput');
   const clearBtn = document.getElementById('chatClearBtn');
+  const wsSelect = document.getElementById('chatWorkspaceSelect');
+  const exploreBtn = document.getElementById('chatExploreFilesBtn');
+  const closeDrawer = document.getElementById('closeDrawerBtn');
 
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -179,13 +251,34 @@ function initChatListeners() {
     updateMessageCount();
   });
 
+  wsSelect?.addEventListener('change', (e) => {
+    currentWorkspace = e.target.value;
+  });
+
+  exploreBtn?.addEventListener('click', () => {
+    const ws = wsSelect?.value || currentWorkspace;
+    if (ws) loadWorkspaceTree(ws);
+  });
+
+  closeDrawer?.addEventListener('click', () => {
+    document.getElementById('chatFilesDrawer').hidden = true;
+  });
+
   document.addEventListener('click', (e) => {
     const pill = e.target.closest('.quick-pill');
-    if (pill?.dataset?.prompt) {
-      submitChat(pill.dataset.prompt);
+    if (pill?.dataset?.prompt) submitChat(pill.dataset.prompt);
+
+    const attachBtn = e.target.closest('.attach-file-btn');
+    if (attachBtn?.dataset?.rel) attachFileToChat(attachBtn.dataset.rel);
+
+    const saveBtn = e.target.closest('.save-file-btn');
+    if (saveBtn?.dataset?.file) {
+      const codeWrap = saveBtn.closest('.code-block-wrap');
+      const rawCode = codeWrap?.querySelector('.raw-code')?.textContent || '';
+      saveFileDirectly(saveBtn.dataset.file, rawCode);
     }
   });
 }
 
-populateModels();
+populateModelsAndWorkspaces();
 initChatListeners();
