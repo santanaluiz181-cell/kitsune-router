@@ -259,6 +259,22 @@ test('Multi-provedores OAuth/Claude/DeepSeek: headers, tier gate e Adapter HTTP'
   }
 });
 
+test('SSE v1: role chunk, deltas por palavra, stop com usage e [DONE]', async () => {
+  const { sendOpenAiSseCompletion } = await import('../src/adapters/gateway_helpers.ts');
+  const lines: string[] = [];
+  const res = { writeHead() {}, write(s: string) { lines.push(s); return true; }, end() {} };
+  const outcome = { model: { id: 'm' }, completion: { text: 'ola mundo cruel', inputTokens: 3, outputTokens: 5 } };
+  sendOpenAiSseCompletion(res as never, outcome as never);
+  const payloads = lines.map((l) => l.replace(/^data: /, '').trim()).filter(Boolean);
+  assert.equal(payloads.at(-1), '[DONE]');
+  const chunks = payloads.slice(0, -1).map((p) => JSON.parse(p));
+  assert.equal(chunks[0].choices[0].delta.role, 'assistant');
+  assert.equal(chunks.slice(1, -1).map((c) => c.choices[0].delta.content).join(''), 'ola mundo cruel');
+  assert.equal(chunks.at(-1).choices[0].finish_reason, 'stop');
+  assert.equal(chunks.at(-1).usage.total_tokens, 8);
+  assert.ok(chunks.slice(0, -1).every((c) => c.choices[0].finish_reason === null));
+});
+
 test('Gateway HUD Pill, relay de eventos MCP e import Gemini CLI opt-in', async () => {
   const prevNoHud = process.env.KITSUNE_NO_HUD;
   process.env.KITSUNE_NO_HUD = '1';

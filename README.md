@@ -1,11 +1,11 @@
-<div align="center">
+﻿<div align="center">
 
 <img src="assets/kitsune-github-banner.svg" alt="Kitsune Router Animated Hero Banner" width="100%" />
 
 # Kitsune Router
 
 <p>
-  <strong><a href="README.md">English (US)</a></strong> · <a href="README.pt-BR.md">Português (Brasil)</a>
+  <strong><a href="README.md">English (US)</a></strong> Â· <a href="README.pt-BR.md">PortuguÃªs (Brasil)</a>
 </p>
 
 **Turn your Antigravity, Codex, OpenAI-compatible, and MCP clients into a live multi-account AI workstation with automatic 429 failover, Windows DPAPI key encryption, PrivacyGuard, and an animated floating Pill HUD.**

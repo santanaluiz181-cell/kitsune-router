@@ -184,15 +184,32 @@ export function sendOpenAiSseCompletion(
   res: ServerResponse,
   outcome: Extract<Awaited<ReturnType<RouterOrchestrator['executeCompletion']>>, { ok: true }>
 ): void {
-  res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache' });
-  const chunk = {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  const base = {
     id: `chatcmpl-kitsune-${Date.now()}`,
     object: 'chat.completion.chunk',
     created: Math.floor(Date.now() / 1000),
-    model: outcome.model.id,
-    choices: [{ index: 0, delta: { role: 'assistant', content: outcome.completion.text }, finish_reason: 'stop' }]
+    model: outcome.model.id
   };
-  res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+  const emit = (delta: Record<string, string>, finish: string | null, extra: object = {}): void => {
+    res.write(`data: ${JSON.stringify({ ...base, choices: [{ index: 0, delta, finish_reason: finish }], ...extra })}\n\n`);
+  };
+  emit({ role: 'assistant', content: '' }, null);
+  for (const piece of outcome.completion.text.match(/\S+\s*|\s+/g) ?? []) {
+    emit({ content: piece }, null);
+  }
+  emit({}, 'stop', {
+    usage: {
+      prompt_tokens: outcome.completion.inputTokens,
+      completion_tokens: outcome.completion.outputTokens,
+      total_tokens: outcome.completion.inputTokens + outcome.completion.outputTokens
+    }
+  });
   res.write('data: [DONE]\n\n');
   res.end();
 }
