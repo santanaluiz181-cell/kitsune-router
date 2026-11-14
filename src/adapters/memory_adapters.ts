@@ -104,12 +104,14 @@ export class MemoryVaultAdapter implements VaultPort {
     const resolvedSecret = trimmedSecret || (existing ? (this.secrets.get(input.id) ?? '') : '');
     this.secrets.set(input.id, resolvedSecret);
 
+    const cleanLabel = (input.label ?? '').trim() || input.id;
+    const cleanBaseUrl = (input.baseUrl ?? '').trim() || DEFAULT_BASE_URLS[input.provider];
     const next: KeySlotMetadata = {
       id: input.id,
-      label: input.label.trim() || input.id,
+      label: cleanLabel,
       provider: input.provider,
       tier: input.tier,
-      baseUrl: input.baseUrl.trim() || DEFAULT_BASE_URLS[input.provider],
+      baseUrl: cleanBaseUrl,
       maskedSecret: maskKey(resolvedSecret, input.provider),
       enabled: input.enabled,
       priority: input.priority,

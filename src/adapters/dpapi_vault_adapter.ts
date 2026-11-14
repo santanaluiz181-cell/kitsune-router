@@ -111,19 +111,21 @@ export class DpapiVaultAdapter implements VaultPort {
 
     if (trimmedSecret) {
       this.doc.secrets[id] = await this.cipher.encrypt(trimmedSecret);
-    } else if (!existing && input.provider === 'ollama') {
+    } else if (!existing && (input.provider === 'ollama' || input.provider === 'freebuff')) {
       this.doc.secrets[id] = await this.cipher.encrypt('');
-    } else if (!existing && input.provider !== 'ollama') {
+    } else if (!existing && input.provider !== 'ollama' && input.provider !== 'freebuff') {
       throw new Error('Novo slot exige chave API preenchida.');
     }
 
     const secretForMask = trimmedSecret || (existing ? await this.safePeekSecret(id) : '');
+    const cleanLabel = (input.label ?? '').trim() || id;
+    const cleanBaseUrl = (input.baseUrl ?? '').trim() || DEFAULT_BASE_URLS[input.provider];
     const nextSlot: KeySlotMetadata = {
       id,
-      label: input.label.trim() || id,
+      label: cleanLabel,
       provider: input.provider,
       tier: input.tier,
-      baseUrl: input.baseUrl.trim() || DEFAULT_BASE_URLS[input.provider],
+      baseUrl: cleanBaseUrl,
       maskedSecret: maskKey(secretForMask, input.provider),
       enabled: input.enabled,
       priority: Number.isFinite(input.priority) ? Math.floor(input.priority) : 10,
@@ -239,7 +241,8 @@ function sanitizeSlotId(rawId: string): string {
   return clean;
 }
 
-function cleanModelList(models: ReadonlyArray<string>): string[] {
+function cleanModelList(models?: ReadonlyArray<string>): string[] {
+  if (!Array.isArray(models)) return [];
   return [...new Set(models.map((item) => item.trim()).filter(Boolean))];
 }
 

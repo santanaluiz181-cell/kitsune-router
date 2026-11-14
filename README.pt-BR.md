@@ -72,7 +72,12 @@ flowchart LR
 | `anthropic` | Chave Claude Console ou token OAuth | `anthropic/claude-sonnet-4-5`, `anthropic/claude-opus-4` | Apenas `public` |
 | `deepseek` | Chave DeepSeek Platform | `deepseek/deepseek-chat` (V3), `deepseek/deepseek-reasoner` (R1) | Apenas `public` |
 | `openrouter` | Chave OpenRouter (suporta tiers `:free`) | `openrouter/deepseek/deepseek-r1:free`, `openrouter/qwen/qwen-2.5-coder-32b-instruct` | Apenas `public` |
+| `nvidia` | Chave NVIDIA NIM / Build API | `nvidia/nemotron-3-ultra-550b-a55b`, `nvidia/llama-3.1-nemotron-70b-instruct` | Apenas `public` |
+| `freebuff` | Gateway Comunitario Free Buffer (sem chave, ad-block nativo) | `freebuff/codebuff-deepseek-open` | Apenas `public` |
 | `ollama` | Motor local 100% offline (`127.0.0.1:11434`) | `ollama/qwen2.5-coder:14b` + modelos locais | **`confidential` e `public`** |
+
+> [!NOTE]
+> **Aviso Tecnico sobre o Free Buffer (`freebuff`)**: O Free Buffer e um gateway comunitario publico com filtro automatico de anuncios (`[Sponsored by ...]`). Permite testar modelos de raciocinio sem cadastrar cartao ou chaves, mas por ser um recurso compartilhado externo, esta sujeito a limites de taxa da comunidade, fila e eventuais instabilidades temporarias. Recomendado como contingencia ou para quem nao possui chaves pagas.
 
 ---
 
@@ -109,9 +114,25 @@ Adicione o `kitsune-router` no arquivo `mcp_config.json` do Antigravity / Codex 
 Quando o servidor MCP inicia:
 1. Verifica se a porta `127.0.0.1:4319` já está ativa. Se estiver livre, sobe o gateway HTTP junto; se já estiver aberta, retransmite os eventos em tempo real para a HUD ativa.
 2. Abre automaticamente a Compact Pill HUD no Windows (use `--no-hud` ou `KITSUNE_NO_HUD=1` em ambientes sem interface gráfica).
-3. Libera as ferramentas **`kitsune_route_prompt`**, **`kitsune_list_models`**, **`kitsune_set_active_profile`**, **`kitsune_usage_summary`** e **`kitsune_open_pill`**.
+3. Libera 8 ferramentas táticas no MCP:
+   - **`kitsune_route_prompt`**: roteamento inteligente com failover 429 e proteção de privacidade.
+   - **`kitsune_status`**: telemetria em tempo real de slots ativos, saúde e cooldowns.
+   - **`kitsune_list_slots`**: lista slots configurados com máscaras de segurança nos tokens.
+   - **`kitsune_toggle_slot`**: liga ou desliga chaves e provedores específicos sob demanda.
+   - **`kitsune_list_models`**: cataloga modelos disponíveis entre Gemini, Claude, DeepSeek e locais.
+   - **`kitsune_open_pill`**: aciona o floating Compact Pill HUD no desktop.
+   - **`kitsune_list_workspace_files`**: varre árvore de arquivos e diretórios de projetos Antigravity.
+   - **`kitsune_read_workspace_file`**: lê trechos de arquivos com paginação cirúrgica (StartLine/EndLine).
+   - **`kitsune_write_workspace_file`**: cria ou aplica modificações pontuais diretamente nos arquivos locais.
 
-### 3. Conecte Contas e Chaves no Cofre DPAPI
+### 3. Fluxo Econômico de Tokens (Gemini 3.8 Flash Low + Kitsune MCP)
+
+Quando a cota dos modelos pesados estiver no fim:
+1. Ative o **Gemini 3.8 Flash** com raciocínio baixo (`low`) no seletor de modelos do Antigravity.
+2. O modelo leve utiliza as ferramentas MCP do Kitsune (`kitsune_read_workspace_file` e `kitsune_write_workspace_file`) como braço mecânico para ler e alterar o código específico (partes X e Y do projeto).
+3. Isso garante continuidade operacional ilimitada sem estourar o limite de tokens do modelo principal.
+
+### 4. Conecte Contas e Chaves no Cofre DPAPI
 
 Na seção **`03 // COFRE DPAPI`** do painel:
 - **Importar sessao Gemini CLI**: importa com 1 clique seu token OAuth local (`~/.gemini/oauth_creds.json`) direto para o cofre criptografado do Windows (DPAPI), sem nunca expor segredos em texto puro na rede.

@@ -72,7 +72,12 @@ flowchart LR
 | `anthropic` | Claude Console API Key or OAuth session token | `anthropic/claude-sonnet-4-5`, `anthropic/claude-opus-4` | Public only |
 | `deepseek` | DeepSeek Platform Key | `deepseek/deepseek-chat` (V3), `deepseek/deepseek-reasoner` (R1) | Public only |
 | `openrouter` | OpenRouter Key | `openrouter/deepseek/deepseek-r1:free`, `openrouter/qwen/qwen-2.5-coder-32b-instruct` | Public only |
+| `nvidia` | NVIDIA NIM / Build API Key | `nvidia/nemotron-3-ultra-550b-a55b`, `nvidia/llama-3.1-nemotron-70b-instruct` | Public only |
+| `freebuff` | Free Buffer Community Gateway (no key needed, ad-block enabled) | `freebuff/codebuff-deepseek-open` | Public only |
 | `ollama` | 100% offline local engine (`127.0.0.1:11434`) | `ollama/qwen2.5-coder:14b` + any local model | **Confidential & Public** |
+
+> [!NOTE]
+> **Free Buffer (`freebuff`) Community Notice**: Free Buffer is a community-supported gateway adapter with automatic in-flight ad sanitization (stripping `[Sponsored by ...]` patterns). It allows instant zero-cost routing without payment methods, but is subject to upstream community rate limits, cold starts, and intermittent availability. Keep your Google AI Studio or local Ollama slots configured for mission-critical workflows.
 
 ---
 
@@ -109,9 +114,25 @@ Add `kitsune-router` to your Antigravity / Codex / Claude Desktop MCP configurat
 When the MCP bridge starts:
 1. It checks whether `127.0.0.1:4319` is already listening. If free, it starts the local UI gateway in-process; if already running, it relays live MCP events to the active HUD over loopback HTTP.
 2. On Windows desktop sessions, it opens the Compact Pill HUD (pass `--no-hud` or `KITSUNE_NO_HUD=1` for headless/CI environments).
-3. Your agent gains **`kitsune_route_prompt`**, **`kitsune_list_models`**, **`kitsune_set_active_profile`**, **`kitsune_usage_summary`**, and **`kitsune_open_pill`**.
+3. Your agent gains 8 operational MCP tools:
+   - **`kitsune_route_prompt`**: smart multi-account rotation with 429 backoff and prompt privacy gates.
+   - **`kitsune_status`**: live telemetry of active slots, health, and cooldown timers.
+   - **`kitsune_list_slots`**: list configured provider slots with masked tokens.
+   - **`kitsune_toggle_slot`**: dynamically enable or disable specific keys or providers.
+   - **`kitsune_list_models`**: browse supported models across Gemini, Claude, DeepSeek, and local LLMs.
+   - **`kitsune_open_pill`**: trigger the desktop floating Compact Pill HUD.
+   - **`kitsune_list_workspace_files`**: inspect project tree and files across Antigravity workspaces.
+   - **`kitsune_read_workspace_file`**: read targeted file sections with StartLine/EndLine pagination.
+   - **`kitsune_write_workspace_file`**: apply surgical edits and file creations directly to local projects.
 
-### 3. Optional Agent Skill (`skills/kitsune-router/SKILL.md`)
+### 3. Lightweight Model Delegation (Gemini 3.8 Flash Low + MCP)
+
+When your quota is running low on high-tier models:
+1. Select **Gemini 3.8 Flash** with low reasoning effort in Antigravity.
+2. Delegate code analysis and file modifications directly to the **Kitsune MCP** tools (`kitsune_read_workspace_file`, `kitsune_write_workspace_file`).
+3. The lightweight model acts as an agile controller, reading only needed file slices and applying surgical patches without exhausting context windows or token quotas.
+
+### 4. Optional Agent Skill (`skills/kitsune-router/SKILL.md`)
 
 Copy [`skills/kitsune-router/SKILL.md`](skills/kitsune-router/SKILL.md) into your workspace or global skills folder so agents automatically follow `PrivacyGuard` confidentiality rules and wake up the Pill HUD when routing prompts.
 

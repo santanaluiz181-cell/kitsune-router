@@ -172,7 +172,7 @@ test('MCP JSON-RPC: initialize, tools/list, tools/call', async () => {
   const init = await mcp.handleMessage({ jsonrpc: '2.0', id: 1, method: 'initialize' });
   assert.equal((init!.result as { serverInfo: { name: string } }).serverInfo.name, 'kitsune-router');
   const list = await mcp.handleMessage({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
-  assert.equal((list!.result as { tools: unknown[] }).tools.length, 5);
+  assert.equal((list!.result as { tools: unknown[] }).tools.length, 8);
   const pillRes = await mcp.handleMessage({ jsonrpc: '2.0', id: 30, method: 'tools/call', params: { name: 'kitsune_open_pill', arguments: {} } });
   assert.equal(pillOpened, 1);
   assert.match((pillRes!.result as { content: Array<{ text: string }> }).content[0].text, /\?mode=pill/);
@@ -180,6 +180,10 @@ test('MCP JSON-RPC: initialize, tools/list, tools/call', async () => {
   const res = call!.result as { isError: boolean; content: Array<{ text: string }> };
   assert.equal(res.isError, false);
   assert.match(res.content[0].text, /teste mcp/);
+
+  const wsList = await mcp.handleMessage({ jsonrpc: '2.0', id: 31, method: 'tools/call', params: { name: 'kitsune_list_workspace_files', arguments: { project: 'kitsune-router', limit: 5 } } });
+  assert.equal((wsList!.result as { isError: boolean }).isError, false);
+
   const empty = await mcp.handleMessage({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'kitsune_route_prompt', arguments: {} } });
   assert.equal((empty!.result as { isError: boolean }).isError, true);
   const badPolicy = await mcp.handleMessage({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'kitsune_set_active_profile', arguments: { policy: 'xx' } } });

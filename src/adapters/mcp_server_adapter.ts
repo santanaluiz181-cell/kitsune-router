@@ -1,6 +1,12 @@
 import type { RouterOrchestrator } from '../app/router_orchestrator.ts';
 import { MODEL_CATALOG } from '../domain/model_catalog.ts';
 import type { ChatMessage, RoutingPolicy, SensitivityLevel } from '../domain/types.ts';
+import {
+  findKnownWorkspaces,
+  listWorkspaceFiles,
+  readWorkspaceFileSafe,
+  writeWorkspaceFileSafe
+} from './antigravity_workspace_adapter.ts';
 
 export interface JsonRpcRequest {
   jsonrpc?: string;
@@ -66,6 +72,39 @@ const MCP_TOOLS = [
     name: 'kitsune_open_pill',
     description: 'Opens the floating Kitsune Compact Pill HUD window showing live mascot and Antigravity MCP request states.',
     inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'kitsune_list_workspace_files',
+    description: 'Lists files in the active Antigravity project or workspace.',
+    inputSchema: {
+      type: 'object',
+      properties: { workspacePath: { type: 'string', description: 'Absolute workspace path (optional).' } }
+    }
+  },
+  {
+    name: 'kitsune_read_workspace_file',
+    description: 'Reads a file from an Antigravity project or workspace.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        relativePath: { type: 'string', description: 'Relative file path inside the workspace.' },
+        workspacePath: { type: 'string', description: 'Absolute workspace root path (optional).' }
+      },
+      required: ['relativePath']
+    }
+  },
+  {
+    name: 'kitsune_write_workspace_file',
+    description: 'Writes or updates a file in an Antigravity project or workspace with full code.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        relativePath: { type: 'string', description: 'Relative file path inside the workspace.' },
+        content: { type: 'string', description: 'Complete file text content to write.' },
+        workspacePath: { type: 'string', description: 'Absolute workspace root path (optional).' }
+      },
+      required: ['relativePath', 'content']
+    }
   }
 ];
 
@@ -172,6 +211,15 @@ export class McpServerAdapter {
     if (name === 'kitsune_open_pill') {
       return this.toolOpenPill(id);
     }
+    if (name === 'kitsune_list_workspace_files') {
+      return this.toolListWorkspaceFiles(id, args);
+    }
+    if (name === 'kitsune_read_workspace_file') {
+      return this.toolReadWorkspaceFile(id, args);
+    }
+    if (name === 'kitsune_write_workspace_file') {
+      return this.toolWriteWorkspaceFile(id, args);
+    }
     return rpcError(id, -32602, `Unknown tool: ${name}`);
   }
 
@@ -267,6 +315,43 @@ export class McpServerAdapter {
     ].join('\n');
 
     return toolTextResult(id, `${outcome.completion.text}\n\n${footer}`, false);
+  }
+
+  private toolListWorkspaceFiles(id: string | number | null, args: Record<string, unknown>): JsonRpcResponse {
+    const ws = typeof args.workspacePath === 'string' && args.workspacePath ? args.workspacePath : process.cwd();
+    const files = listWorkspaceFiles(ws, 150);
+    return toolTextResult(id, JSON.stringify({ workspace: ws, files }, null, 2), false);
+  }
+
+  private async toolReadWorkspaceFile(
+    id: string | number | null,
+    args: Record<string, unknown>
+  ): Promise<JsonRpcResponse> {
+    const rel = typeof args.relativePath === 'string' ? args.relativePath : '';
+    const ws = typeof args.workspacePath === 'string' && args.workspacePath ? args.workspacePath : process.cwd();
+    if (!rel) return toolTextResult(id, 'relativePath obrigatorio', true);
+    try {
+      const content = await readWorkspaceFileSafe(ws, rel);
+      return toolTextResult(id, content, false);
+    } catch (err: unknown) {
+      return toolTextResult(id, `Erro ao ler arquivo: ${(err as Error).message}`, true);
+    }
+  }
+
+  private async toolWriteWorkspaceFile(
+    id: string | number | null,
+    args: Record<string, unknown>
+  ): Promise<JsonRpcResponse> {
+    const rel = typeof args.relativePath === 'string' ? args.relativePath : '';
+    const content = typeof args.content === 'string' ? args.content : '';
+    const ws = typeof args.workspacePath === 'string' && args.workspacePath ? args.workspacePath : process.cwd();
+    if (!rel) return toolTextResult(id, 'relativePath obrigatorio', true);
+    try {
+      const res = await writeWorkspaceFileSafe(ws, rel, content);
+      return toolTextResult(id, JSON.stringify({ ok: true, file: rel, size: res.sizeBytes }), false);
+    } catch (err: unknown) {
+      return toolTextResult(id, `Erro ao gravar: ${(err as Error).message}`, true);
+    }
   }
 }
 

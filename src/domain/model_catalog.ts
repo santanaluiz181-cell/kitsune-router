@@ -192,6 +192,42 @@ export const MODEL_CATALOG: ReadonlyArray<ModelProfile> = [
     outputCostPer1MUsd: 0,
     upstreamModelId: 'qwen2.5-coder:14b',
     notes: '100% offline local inference with zero cost and maximum privacy.'
+  },
+  {
+    id: 'nvidia/nemotron-3-ultra-550b-a55b',
+    label: 'NVIDIA Nemotron Ultra (1M Tokens)',
+    provider: 'nvidia',
+    tierClass: 'frontier',
+    availableOnFreeTier: true,
+    contextWindow: 1_000_000,
+    inputCostPer1MUsd: 0,
+    outputCostPer1MUsd: 0,
+    upstreamModelId: 'nvidia/nemotron-3-ultra-550b-a55b',
+    notes: 'Massive 1M token context reasoning model via NVIDIA Build NIM.'
+  },
+  {
+    id: 'nvidia/llama-3.1-nemotron-70b-instruct',
+    label: 'NVIDIA Nemotron 70B',
+    provider: 'nvidia',
+    tierClass: 'balanced',
+    availableOnFreeTier: true,
+    contextWindow: 131_072,
+    inputCostPer1MUsd: 0,
+    outputCostPer1MUsd: 0,
+    upstreamModelId: 'nvidia/llama-3.1-nemotron-70b-instruct',
+    notes: 'High-speed Nemotron 70B model via NVIDIA API.'
+  },
+  {
+    id: 'freebuff/codebuff-deepseek-open',
+    label: 'Free Buffer Comunitario (DeepSeek / Ad-Block)',
+    provider: 'freebuff',
+    tierClass: 'economy',
+    availableOnFreeTier: true,
+    contextWindow: 64_000,
+    inputCostPer1MUsd: 0,
+    outputCostPer1MUsd: 0,
+    upstreamModelId: 'deepseek-chat',
+    notes: 'Gateway publico gratuito comunitario com filtro nativo de anuncios.'
   }
 ];
 
@@ -202,7 +238,9 @@ export const DEFAULT_BASE_URLS: Readonly<Record<ProviderKind, string>> = {
   deepseek: 'https://api.deepseek.com',
   openrouter: 'https://openrouter.ai/api',
   ollama: 'http://127.0.0.1:11434',
-  'openai-compat': 'http://127.0.0.1:1234'
+  'openai-compat': 'http://127.0.0.1:1234',
+  nvidia: 'https://integrate.api.nvidia.com',
+  freebuff: 'https://api.codebuff.com'
 };
 
 export function findModelProfile(modelId: string): ModelProfile | undefined {

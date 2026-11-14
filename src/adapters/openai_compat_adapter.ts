@@ -59,7 +59,8 @@ export class OpenAICompatAdapter implements ProviderPort {
     }
 
     const firstChoice = parsed?.choices?.[0];
-    const text = (firstChoice?.message?.content ?? '').trim();
+    const rawText = (firstChoice?.message?.content ?? '').trim();
+    const text = stripAdsIfFreebuff(input.slot.provider, rawText);
     if (!text) {
       throw new ProviderRequestError(`Provedor ${input.slot.provider} retornou resposta vazia`, 502, null);
     }
@@ -134,4 +135,13 @@ function buildOpenAiPayload(input: ProviderSendInput): Record<string, unknown> {
 
 function ensureV1BaseUrl(baseUrl: string): string {
   return /\/v1$/i.test(baseUrl) ? baseUrl : `${baseUrl}/v1`;
+}
+
+function stripAdsIfFreebuff(provider: string, text: string): string {
+  if (provider !== 'freebuff') return text;
+  return text
+    .replace(/\[Sponsored by [^\]]+\]/gi, '')
+    .replace(/Free tier powered by [^\n]+/gi, '')
+    .replace(/Ad:\s*[^\n]+/gi, '')
+    .trim();
 }

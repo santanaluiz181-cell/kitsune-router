@@ -5,7 +5,9 @@ export type ProviderKind =
   | 'deepseek'
   | 'openrouter'
   | 'ollama'
-  | 'openai-compat';
+  | 'openai-compat'
+  | 'nvidia'
+  | 'freebuff';
 
 export type AccountTier = 'free' | 'paid' | 'local';
 
