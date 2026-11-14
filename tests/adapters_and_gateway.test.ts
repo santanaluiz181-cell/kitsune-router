@@ -11,6 +11,7 @@ import { HttpGatewayAdapter } from '../src/adapters/http_gateway_adapter.ts';
 import { McpServerAdapter } from '../src/adapters/mcp_server_adapter.ts';
 import { MemoryLedgerAdapter, MemoryProviderAdapter, MemoryVaultAdapter, maskKey } from '../src/adapters/memory_adapters.ts';
 import { SqliteLedgerAdapter } from '../src/adapters/sqlite_ledger_adapter.ts';
+import { listAntigravityConversations, getAntigravityTranscriptMessages } from '../src/adapters/antigravity_conversation_adapter.ts';
 import { RouterOrchestrator } from '../src/app/router_orchestrator.ts';
 import type { MascotEventPayload } from '../src/app/router_orchestrator.ts';
 import { selectRoute } from '../src/domain/router_engine.ts';
@@ -340,3 +341,32 @@ test('Gateway HUD Pill, relay de eventos MCP e import Gemini CLI opt-in', async 
     rmSync(fakeHome, { recursive: true, force: true });
   }
 });
+
+test('antigravity conversation adapter lista e le historico de transcripts', async () => {
+  const fakeBrain = tmp();
+  try {
+    const convId = 'test-conv-1234';
+    const logsDir = path.join(fakeBrain, convId, '.system_generated', 'logs');
+    mkdirSync(logsDir, { recursive: true });
+    const sampleTranscript = [
+      JSON.stringify({ type: 'USER_INPUT', content: '<USER_REQUEST>Ola Kitsune teste</USER_REQUEST>' }),
+      JSON.stringify({ type: 'PLANNER_RESPONSE', content: 'Ola humano, Kitsune ativa!' })
+    ].join('\n');
+    writeFileSync(path.join(logsDir, 'transcript.jsonl'), sampleTranscript, 'utf8');
+
+    const convs = listAntigravityConversations(10, fakeBrain);
+    assert.equal(convs.length, 1);
+    assert.equal(convs[0].id, convId);
+    assert.equal(convs[0].title, 'Ola Kitsune teste');
+
+    const msgs = getAntigravityTranscriptMessages(convId, 10, fakeBrain);
+    assert.equal(msgs.length, 2);
+    assert.equal(msgs[0].role, 'user');
+    assert.equal(msgs[0].content, 'Ola Kitsune teste');
+    assert.equal(msgs[1].role, 'assistant');
+    assert.equal(msgs[1].content, 'Ola humano, Kitsune ativa!');
+  } finally {
+    rmSync(fakeBrain, { recursive: true, force: true });
+  }
+});
+

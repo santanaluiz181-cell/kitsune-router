@@ -3,6 +3,8 @@
 @font-face { font-family: 'JetBrains Mono'; src: url('/fonts/jetbrains-mono.woff2') format('woff2'); font-weight: 500 800; font-display: swap; }
 
 :root {
+  --bg: #FAF7F4;
+  --bg-surface: #FDF9F5;
   --bg-canvas: #FAF7F4;
   --bg-card: #FFFFFF;
   --bg-subcard: #FDF9F5;
@@ -32,6 +34,8 @@
 }
 
 :root[data-theme='dark'] {
+  --bg: #0D0D0F;
+  --bg-surface: #1B1B20;
   --bg-canvas: #0D0D0F;
   --bg-card: #151518;
   --bg-subcard: #1B1B20;
@@ -621,7 +625,7 @@ dialog h3 { margin: 0 0 8px; font-family: var(--font-serif); }
 #chatSection.is-fullscreen {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: 999999;
   width: 100vw;
   height: 100vh;
   max-width: 100vw;
@@ -632,7 +636,8 @@ dialog h3 { margin: 0 0 8px; font-family: var(--font-serif); }
   box-shadow: none;
   display: flex;
   flex-direction: row;
-  background: var(--bg);
+  background: var(--bg-canvas) !important;
+  color: var(--ink);
   overflow: hidden;
 }
 
@@ -652,6 +657,7 @@ dialog h3 { margin: 0 0 8px; font-family: var(--font-serif); }
   overflow-y: auto;
   padding: 14px;
   gap: 12px;
+  color: var(--ink);
 }
 
 #chatSection:not(.is-fullscreen) .chat-sidebar {
@@ -665,20 +671,28 @@ dialog h3 { margin: 0 0 8px; font-family: var(--font-serif); }
   height: 100vh;
   overflow: hidden;
   padding: 16px 24px;
-  background: var(--bg-surface);
+  background: var(--bg-canvas);
+  color: var(--ink);
 }
 
 #chatSection.is-fullscreen .chat-container {
   flex: 1;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 130px);
   margin-top: 8px;
   border-radius: 8px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  box-shadow: 4px 4px 0 var(--shadow-hard);
 }
 
 #chatSection.is-fullscreen .chat-messages {
   max-height: none;
   flex: 1;
   padding: 12px 8px;
+  background: var(--bg-subcard);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
 }
 
 .chat-zen-topbar {

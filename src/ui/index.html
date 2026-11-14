@@ -176,7 +176,13 @@
       <aside id="chatSidebar" class="chat-sidebar" aria-label="Histórico de Sessões">
         <button id="newChatSessionBtn" class="carimbo accent" type="button">+ Nova Conversa</button>
         <div class="sessions-header">
-          <span>Conversas Salvas</span>
+          <span>⚡ Antigravity IDE</span>
+          <button id="syncAntigravityBtn" class="session-del-btn" type="button" title="Sincronizar conversas do Antigravity">🔄</button>
+        </div>
+        <div id="antigravitySessionsList" class="session-list"></div>
+
+        <div class="sessions-header" style="margin-top: 10px;">
+          <span>💾 Conversas Salvas</span>
           <span id="sessionCount">0</span>
         </div>
         <div id="chatSessionsList" class="session-list"></div>
@@ -193,7 +199,6 @@
             <button id="chatCollapseBtn" class="carimbo square" type="button" title="Minimizar Tela Cheia (Esc)">✕ Fechar</button>
           </div>
         </div>
-
         <div class="workspace-bar" aria-label="Integração de Arquivos do Antigravity">
           <div class="ws-select-wrap">
             <label for="chatWorkspaceSelect">📂 Projeto Real (Downloads):</label>

@@ -1,10 +1,10 @@
 // Kitsune Chat Web - Interface Conversacional com Tela Cheia Zen e Sessões Persistidas
-// Integrado aos Projetos Reais de Downloads, Streaming SSE e Diretiva Eesel AI
-
+// Integrado ao Antigravity IDE Transcripts, Projetos Reais de Downloads e Diretiva Eesel AI
 const SESSIONS_KEY = 'kitsune_chat_sessions_v2';
 const ACTIVE_KEY = 'kitsune_active_session_id';
 
 let sessions = [];
+let antigravityConvs = [];
 let activeSessionId = null;
 let isStreaming = false;
 let currentWorkspace = '';
@@ -39,13 +39,10 @@ function loadSessionsFromStorage() {
     sessions = [];
   }
   if (!Array.isArray(sessions) || sessions.length === 0) {
-    const firstSess = createSessionObject('Nova Conversa');
-    sessions = [firstSess];
+    sessions = [createSessionObject('Nova Conversa')];
   }
   activeSessionId = localStorage.getItem(ACTIVE_KEY) || sessions[0].id;
-  if (!sessions.some((s) => s.id === activeSessionId)) {
-    activeSessionId = sessions[0].id;
-  }
+  if (!sessions.some((s) => s.id === activeSessionId)) activeSessionId = sessions[0].id;
 }
 
 function persistSessions() {
@@ -71,6 +68,56 @@ function getActiveSession() {
   return sessions.find((s) => s.id === activeSessionId) || sessions[0];
 }
 
+async function fetchAntigravityConversations() {
+  try {
+    const res = await fetch('/api/antigravity/conversations').then((r) => r.json());
+    antigravityConvs = res.conversations || [];
+    renderAntigravitySessionsList();
+  } catch (err) {
+    console.error('Erro ao ler conversas Antigravity:', err);
+  }
+}
+
+function renderAntigravitySessionsList() {
+  const container = document.getElementById('antigravitySessionsList');
+  if (!container) return;
+  if (!antigravityConvs.length) {
+    container.innerHTML = '<span class="hint" style="padding:4px 8px;font-size:11px;">Nenhuma conversa recente</span>';
+    return;
+  }
+  container.innerHTML = antigravityConvs.map((c) => {
+    const isLinked = getActiveSession()?.linkedAntigravityId === c.id;
+    const timeStr = new Date(c.lastModifiedMs).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const badge = c.isCurrent ? ' <span class="bubble-tag" style="font-size:9px;padding:1px 4px;">Atual</span>' : '';
+    return `<div class="session-item ${isLinked ? 'active' : ''}" data-ag-id="${escapeHtml(c.id)}" title="${escapeHtml(c.title)}"><div class="session-info"><span class="session-title">⚡ ${escapeHtml(c.title)}${badge}</span><span class="session-meta">${c.messageCount} msgs · ${timeStr}</span></div></div>`;
+  }).join('');
+}
+
+async function loadAntigravityConversationIntoSession(convId) {
+  const conv = antigravityConvs.find((c) => c.id === convId);
+  try {
+    const res = await fetch(`/api/antigravity/messages?id=${encodeURIComponent(convId)}`).then((r) => r.json());
+    const rawMsgs = res.messages || [];
+    const sess = createSessionObject(conv ? conv.title : 'Conversa Antigravity');
+    sess.linkedAntigravityId = convId;
+    sess.messages = rawMsgs.map((m) => ({
+      role: m.role,
+      content: m.content,
+      model: m.model || (m.role === 'assistant' ? 'Antigravity IDE' : ''),
+      timestamp: Date.now()
+    }));
+    sessions.unshift(sess);
+    activeSessionId = sess.id;
+    persistSessions();
+    renderSessionsList();
+    renderAntigravitySessionsList();
+    renderActiveSessionMessages();
+    window.fox?.speak?.('Conversa do Antigravity carregada!', 'celebrating');
+  } catch (err) {
+    alert(`Erro ao ler mensagens do Antigravity: ${err.message}`);
+  }
+}
+
 function renderSessionsList() {
   const container = document.getElementById('chatSessionsList');
   const countEl = document.getElementById('sessionCount');
@@ -81,15 +128,8 @@ function renderSessionsList() {
     const isActive = s.id === activeSessionId;
     const msgCount = s.messages.length;
     const timeStr = new Date(s.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return `
-      <div class="session-item ${isActive ? 'active' : ''}" data-sess-id="${escapeHtml(s.id)}">
-        <div class="session-info">
-          <span class="session-title">${escapeHtml(s.title || 'Conversa')}</span>
-          <span class="session-meta">${msgCount} msgs · ${timeStr}</span>
-        </div>
-        ${sessions.length > 1 ? `<button type="button" class="session-del-btn" data-del-id="${escapeHtml(s.id)}" title="Excluir conversa">🗑️</button>` : ''}
-      </div>
-    `;
+    const agTag = s.linkedAntigravityId ? '⚡ ' : '💬 ';
+    return `<div class="session-item ${isActive ? 'active' : ''}" data-sess-id="${escapeHtml(s.id)}"><div class="session-info"><span class="session-title">${agTag}${escapeHtml(s.title || 'Conversa')}</span><span class="session-meta">${msgCount} msgs · ${timeStr}</span></div>${sessions.length > 1 ? `<button type="button" class="session-del-btn" data-del-id="${escapeHtml(s.id)}" title="Excluir">🗑️</button>` : ''}</div>`;
   }).join('');
 }
 
@@ -104,25 +144,10 @@ function renderActiveSessionMessages() {
   if (!sess.messages.length) {
     const intro = document.createElement('div');
     intro.className = 'chat-bubble kitsune-bubble intro-msg';
-    intro.innerHTML = `
-      <div class="bubble-header">
-        <span class="bubble-author">🦊 Kitsune Companion</span>
-        <span class="bubble-tag">ONLINE · COTA INDEPENDENTE</span>
-      </div>
-      <div class="bubble-body">
-        <p>Olá! Este é o chat com tela cheia estilo Meu Amigo Jornalista, histórico completo de conversas e integração real com seus projetos na pasta Downloads. Suas mensagens são processadas pelas contas cadastradas no cofre DPAPI com failover 429 automático.</p>
-        <div class="quick-prompts">
-          <button type="button" class="quick-pill" data-prompt="Liste os arquivos e a arquitetura geral do projeto ativo">📂 Analisar este projeto</button>
-          <button type="button" class="quick-pill" data-prompt="Crie um script TypeScript para demonstrar o uso do Kitsune Router">💡 Exemplo TypeScript</button>
-          <button type="button" class="quick-pill" data-prompt="Como funciona a rotação automática quando uma conta recebe erro HTTP 429?">🛡️ Explique o 429 Failover</button>
-        </div>
-      </div>
-    `;
+    intro.innerHTML = `<div class="bubble-header"><span class="bubble-author">🦊 Kitsune Companion</span><span class="bubble-tag">ONLINE · COTA INDEPENDENTE</span></div><div class="bubble-body"><p>Chat com tela cheia estilo Meu Amigo Jornalista, histórico completo de conversas e integração real com seus projetos na pasta Downloads.</p><div class="quick-prompts"><button type="button" class="quick-pill" data-prompt="Liste os arquivos e a arquitetura geral do projeto ativo">📂 Analisar este projeto</button><button type="button" class="quick-pill" data-prompt="Crie um script TypeScript para demonstrar o uso do Kitsune Router">💡 Exemplo TypeScript</button><button type="button" class="quick-pill" data-prompt="Como funciona a rotação automática quando uma conta recebe erro HTTP 429?">🛡️ Explique o 429 Failover</button></div></div>`;
     container.appendChild(intro);
   } else {
-    for (const m of sess.messages) {
-      appendBubble(m.role, m.content, { model: m.model, skipSave: true });
-    }
+    for (const m of sess.messages) appendBubble(m.role, m.content, { model: m.model, skipSave: true });
   }
 
   updateMessageCount();
@@ -134,6 +159,7 @@ function switchSession(sessId) {
   activeSessionId = sessId;
   persistSessions();
   renderSessionsList();
+  renderAntigravitySessionsList();
   renderActiveSessionMessages();
 }
 
@@ -143,6 +169,7 @@ function startNewSession() {
   activeSessionId = newSess.id;
   persistSessions();
   renderSessionsList();
+  renderAntigravitySessionsList();
   renderActiveSessionMessages();
   document.getElementById('chatInput')?.focus();
 }
@@ -150,11 +177,10 @@ function startNewSession() {
 function deleteSession(sessId) {
   if (sessions.length <= 1) return;
   sessions = sessions.filter((s) => s.id !== sessId);
-  if (activeSessionId === sessId) {
-    activeSessionId = sessions[0].id;
-  }
+  if (activeSessionId === sessId) activeSessionId = sessions[0].id;
   persistSessions();
   renderSessionsList();
+  renderAntigravitySessionsList();
   renderActiveSessionMessages();
 }
 
@@ -190,7 +216,6 @@ function appendBubble(role, content, meta = {}) {
     persistSessions();
     renderSessionsList();
   }
-
   return bubble;
 }
 
@@ -270,11 +295,8 @@ async function saveFileDirectly(relPath, rawCode) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ workspacePath: ws, relativePath: relPath, content: rawCode })
     }).then((r) => r.json());
-    if (res.ok) {
-      alert(`Arquivo ${relPath} gravado com sucesso no projeto (${res.sizeBytes} bytes)!`);
-    } else {
-      alert(`Erro ao gravar arquivo: ${res.error?.message || 'Falha'}`);
-    }
+    if (res.ok) alert(`Arquivo ${relPath} gravado com sucesso (${res.sizeBytes} bytes)!`);
+    else alert(`Erro ao gravar: ${res.error?.message || 'Falha'}`);
   } catch (err) {
     alert(`Erro ao salvar: ${err.message}`);
   }
@@ -313,7 +335,6 @@ async function handleStreamResponse(res, bubbleBody, modelId) {
   sess.updatedAt = Date.now();
   persistSessions();
   renderSessionsList();
-
   updateMessageCount();
   window.fox?.setMood?.('celebrating');
 }
@@ -329,15 +350,14 @@ async function submitChat(prompt) {
   appendBubble('user', prompt);
   if (input) input.value = '';
   updateMessageCount();
-
   isStreaming = true;
   if (btn) btn.disabled = true;
   window.fox?.setMood?.('routing');
 
   const botBubble = appendBubble('assistant', 'Pensando...', { model: modelId, skipSave: true });
   const bubbleBody = botBubble.querySelector('.bubble-body');
-
   const sess = getActiveSession();
+
   try {
     const res = await fetch('/v1/chat/completions', {
       method: 'POST',
@@ -354,12 +374,10 @@ async function submitChat(prompt) {
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      const msg = errData?.error?.message || `Erro HTTP ${res.status}`;
-      bubbleBody.innerHTML = `<span class="err-text">❌ ${escapeHtml(msg)}</span>`;
+      bubbleBody.innerHTML = `<span class="err-text">❌ ${escapeHtml(errData?.error?.message || `Erro HTTP ${res.status}`)}</span>`;
       window.fox?.setMood?.('dizzy');
       return;
     }
-
     await handleStreamResponse(res, bubbleBody, modelId);
   } catch (err) {
     bubbleBody.innerHTML = `<span class="err-text">❌ Falha na conexão: ${escapeHtml(err.message)}</span>`;
@@ -407,6 +425,7 @@ function bindChatControlEvents() {
   document.getElementById('chatExpandBtn')?.addEventListener('click', openFullscreenChat);
   document.getElementById('chatCollapseBtn')?.addEventListener('click', closeFullscreenChat);
   document.getElementById('newChatSessionBtn')?.addEventListener('click', startNewSession);
+  document.getElementById('syncAntigravityBtn')?.addEventListener('click', fetchAntigravityConversations);
   document.getElementById('chatClearBtn')?.addEventListener('click', () => {
     const sess = getActiveSession();
     sess.messages = [];
@@ -431,17 +450,14 @@ function bindChatControlEvents() {
 
 function bindChatGlobalClickEvents() {
   document.addEventListener('click', (e) => {
+    const agItem = e.target.closest('[data-ag-id]');
+    if (agItem?.dataset?.agId) return loadAntigravityConversationIntoSession(agItem.dataset.agId);
+
     const sessItem = e.target.closest('.session-item');
     const delBtn = e.target.closest('.session-del-btn');
-    if (delBtn?.dataset?.delId) {
-      e.stopPropagation();
-      deleteSession(delBtn.dataset.delId);
-      return;
-    }
-    if (sessItem?.dataset?.sessId) {
-      switchSession(sessItem.dataset.sessId);
-      return;
-    }
+    if (delBtn?.dataset?.delId) return deleteSession(delBtn.dataset.delId);
+    if (sessItem?.dataset?.sessId) return switchSession(sessItem.dataset.sessId);
+
     const pill = e.target.closest('.quick-pill');
     if (pill?.dataset?.prompt) submitChat(pill.dataset.prompt);
 
@@ -451,8 +467,7 @@ function bindChatGlobalClickEvents() {
     const saveBtn = e.target.closest('.save-file-btn');
     if (saveBtn?.dataset?.file) {
       const codeWrap = saveBtn.closest('.code-block-wrap');
-      const rawCode = codeWrap?.querySelector('.raw-code')?.textContent || '';
-      saveFileDirectly(saveBtn.dataset.file, rawCode);
+      saveFileDirectly(saveBtn.dataset.file, codeWrap?.querySelector('.raw-code')?.textContent || '');
     }
   });
 }
@@ -478,5 +493,6 @@ loadSessionsFromStorage();
 populateModelsAndWorkspaces().then(() => {
   renderSessionsList();
   renderActiveSessionMessages();
+  fetchAntigravityConversations();
 });
 initChatListeners();

@@ -37,6 +37,10 @@ import {
   readWorkspaceFileSafe,
   writeWorkspaceFileSafe
 } from './antigravity_workspace_adapter.ts';
+import {
+  listAntigravityConversations,
+  getAntigravityTranscriptMessages
+} from './antigravity_conversation_adapter.ts';
 
 const STATIC_FILES: Readonly<Record<string, { file: string; mime: string }>> = {
   '/': { file: 'index.html', mime: 'text/html; charset=utf-8' },
@@ -244,6 +248,19 @@ export class HttpGatewayAdapter {
   ): Promise<boolean> {
   if (req.method === 'GET' && pathname === '/api/workspaces') {
     sendJson(res, 200, { workspaces: findKnownWorkspaces() });
+    return true;
+  }
+  if (req.method === 'GET' && pathname === '/api/antigravity/conversations') {
+    sendJson(res, 200, { conversations: listAntigravityConversations(20) });
+    return true;
+  }
+  if (req.method === 'GET' && pathname === '/api/antigravity/messages') {
+    const convId = urlObj.searchParams.get('id');
+    if (!convId) {
+      sendJson(res, 400, { error: { message: 'Parametro id obrigatorio' } });
+      return true;
+    }
+    sendJson(res, 200, { messages: getAntigravityTranscriptMessages(convId, 120) });
     return true;
   }
   if (req.method === 'GET' && pathname === '/api/workspaces/tree') {
