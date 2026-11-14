@@ -113,13 +113,18 @@ export class RouterOrchestrator {
     };
   }
 
+  getConfig(): RouterConfig {
+    return this.vault.getConfig();
+  }
+
   async setActiveProfile(patch: Partial<RouterConfig>): Promise<RouterConfig> {
     const current = this.vault.getConfig();
     const next: RouterConfig = {
       activeModelId: cleanString(patch.activeModelId) || current.activeModelId,
       policy: patch.policy ?? current.policy,
       defaultSensitivity: patch.defaultSensitivity ?? current.defaultSensitivity,
-      httpPort: isValidPort(patch.httpPort) ? patch.httpPort : current.httpPort
+      httpPort: isValidPort(patch.httpPort) ? patch.httpPort : current.httpPort,
+      mcpEnabled: patch.mcpEnabled !== undefined ? Boolean(patch.mcpEnabled) : (current.mcpEnabled !== false)
     };
     await this.vault.saveConfig(next);
     this.emit({ type: 'config_updated', timestampIso: new Date().toISOString() });

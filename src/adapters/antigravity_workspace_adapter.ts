@@ -66,10 +66,18 @@ export function findKnownWorkspaces(): AntigravityWorkspaceInfo[] {
   parseWorkspaceStorage(antigravityUser, addPath);
 
   const downloads = path.join(homeDir, 'Downloads');
-  ['meu-amigo-jornalista', 'MJ NOTCH COMPANION', 'OpenCut-main', 'API rotativa Gemini'].forEach((sub) => {
-    const candidate = path.join(downloads, sub);
-    if (existsSync(candidate)) addPath(candidate);
-  });
+  if (existsSync(downloads)) {
+    try {
+      const items = readdirSync(downloads, { withFileTypes: true });
+      for (const item of items) {
+        if (!item.isDirectory()) continue;
+        if (item.name.startsWith('.') || item.name.startsWith('$') || item.name.endsWith('_files')) continue;
+        addPath(path.join(downloads, item.name));
+      }
+    } catch {
+      // Ignora erro de acesso a downloads
+    }
+  }
   if (existsSync(path.join(homeDir, 'kitsune-router'))) {
     addPath(path.join(homeDir, 'kitsune-router'));
   }

@@ -30,7 +30,8 @@ const DEFAULT_CONFIG: RouterConfig = {
   activeModelId: 'gemini-3.8-flash',
   policy: 'balanced',
   defaultSensitivity: 'public',
-  httpPort: 4319
+  httpPort: 4319,
+  mcpEnabled: true
 };
 
 export function resolveKitsuneDataDir(explicitDir?: string): string {
@@ -253,7 +254,8 @@ function loadVaultDocument(filePath: string): PersistedVaultDocument {
       activeModelId: parsed.config?.activeModelId || DEFAULT_CONFIG.activeModelId,
       policy: parsed.config?.policy || DEFAULT_CONFIG.policy,
       defaultSensitivity: parsed.config?.defaultSensitivity || DEFAULT_CONFIG.defaultSensitivity,
-      httpPort: parsed.config?.httpPort || DEFAULT_CONFIG.httpPort
+      httpPort: parsed.config?.httpPort || DEFAULT_CONFIG.httpPort,
+      mcpEnabled: parsed.config?.mcpEnabled !== false
     },
     slots: Array.isArray(parsed.slots) ? parsed.slots : [],
     secrets: parsed.secrets && typeof parsed.secrets === 'object' ? parsed.secrets : {}

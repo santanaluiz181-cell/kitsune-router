@@ -1,7 +1,11 @@
-// Kitsune Chat Web - Interface Conversacional 100% Independente da IDE
-// Integracao de Workspaces Antigravity, Streaming SSE e Diretiva Eesel AI
+// Kitsune Chat Web - Interface Conversacional com Tela Cheia Zen e Sessões Persistidas
+// Integrado aos Projetos Reais de Downloads, Streaming SSE e Diretiva Eesel AI
 
-const history = [];
+const SESSIONS_KEY = 'kitsune_chat_sessions_v2';
+const ACTIVE_KEY = 'kitsune_active_session_id';
+
+let sessions = [];
+let activeSessionId = null;
 let isStreaming = false;
 let currentWorkspace = '';
 
@@ -27,9 +31,137 @@ function formatContent(text) {
   }).join('');
 }
 
+function loadSessionsFromStorage() {
+  try {
+    const raw = localStorage.getItem(SESSIONS_KEY);
+    sessions = raw ? JSON.parse(raw) : [];
+  } catch {
+    sessions = [];
+  }
+  if (!Array.isArray(sessions) || sessions.length === 0) {
+    const firstSess = createSessionObject('Nova Conversa');
+    sessions = [firstSess];
+  }
+  activeSessionId = localStorage.getItem(ACTIVE_KEY) || sessions[0].id;
+  if (!sessions.some((s) => s.id === activeSessionId)) {
+    activeSessionId = sessions[0].id;
+  }
+}
+
+function persistSessions() {
+  try {
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+    localStorage.setItem(ACTIVE_KEY, activeSessionId);
+  } catch {}
+}
+
+function createSessionObject(title = 'Nova Conversa') {
+  return {
+    id: `sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    title,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    workspace: currentWorkspace || '',
+    model: document.getElementById('chatModelSelect')?.value || 'gemini-3.8-pro',
+    messages: []
+  };
+}
+
+function getActiveSession() {
+  return sessions.find((s) => s.id === activeSessionId) || sessions[0];
+}
+
+function renderSessionsList() {
+  const container = document.getElementById('chatSessionsList');
+  const countEl = document.getElementById('sessionCount');
+  if (countEl) countEl.textContent = String(sessions.length);
+  if (!container) return;
+
+  container.innerHTML = sessions.map((s) => {
+    const isActive = s.id === activeSessionId;
+    const msgCount = s.messages.length;
+    const timeStr = new Date(s.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="session-item ${isActive ? 'active' : ''}" data-sess-id="${escapeHtml(s.id)}">
+        <div class="session-info">
+          <span class="session-title">${escapeHtml(s.title || 'Conversa')}</span>
+          <span class="session-meta">${msgCount} msgs · ${timeStr}</span>
+        </div>
+        ${sessions.length > 1 ? `<button type="button" class="session-del-btn" data-del-id="${escapeHtml(s.id)}" title="Excluir conversa">🗑️</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderActiveSessionMessages() {
+  const sess = getActiveSession();
+  const container = document.getElementById('chatMessages');
+  const titleEl = document.getElementById('zenSessionTitle');
+  if (titleEl) titleEl.textContent = sess.title || 'Conversa Atual';
+  if (!container) return;
+
+  container.innerHTML = '';
+  if (!sess.messages.length) {
+    const intro = document.createElement('div');
+    intro.className = 'chat-bubble kitsune-bubble intro-msg';
+    intro.innerHTML = `
+      <div class="bubble-header">
+        <span class="bubble-author">🦊 Kitsune Companion</span>
+        <span class="bubble-tag">ONLINE · COTA INDEPENDENTE</span>
+      </div>
+      <div class="bubble-body">
+        <p>Olá! Este é o chat com tela cheia estilo Meu Amigo Jornalista, histórico completo de conversas e integração real com seus projetos na pasta Downloads. Suas mensagens são processadas pelas contas cadastradas no cofre DPAPI com failover 429 automático.</p>
+        <div class="quick-prompts">
+          <button type="button" class="quick-pill" data-prompt="Liste os arquivos e a arquitetura geral do projeto ativo">📂 Analisar este projeto</button>
+          <button type="button" class="quick-pill" data-prompt="Crie um script TypeScript para demonstrar o uso do Kitsune Router">💡 Exemplo TypeScript</button>
+          <button type="button" class="quick-pill" data-prompt="Como funciona a rotação automática quando uma conta recebe erro HTTP 429?">🛡️ Explique o 429 Failover</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(intro);
+  } else {
+    for (const m of sess.messages) {
+      appendBubble(m.role, m.content, { model: m.model, skipSave: true });
+    }
+  }
+
+  updateMessageCount();
+  scrollToBottom();
+}
+
+function switchSession(sessId) {
+  if (sessId === activeSessionId) return;
+  activeSessionId = sessId;
+  persistSessions();
+  renderSessionsList();
+  renderActiveSessionMessages();
+}
+
+function startNewSession() {
+  const newSess = createSessionObject('Nova Conversa');
+  sessions.unshift(newSess);
+  activeSessionId = newSess.id;
+  persistSessions();
+  renderSessionsList();
+  renderActiveSessionMessages();
+  document.getElementById('chatInput')?.focus();
+}
+
+function deleteSession(sessId) {
+  if (sessions.length <= 1) return;
+  sessions = sessions.filter((s) => s.id !== sessId);
+  if (activeSessionId === sessId) {
+    activeSessionId = sessions[0].id;
+  }
+  persistSessions();
+  renderSessionsList();
+  renderActiveSessionMessages();
+}
+
 function updateMessageCount() {
   const counter = document.getElementById('chatTokensCounter');
-  if (counter) counter.textContent = `${history.length} msgs`;
+  const sess = getActiveSession();
+  if (counter) counter.textContent = `${sess.messages.length} msgs`;
 }
 
 function scrollToBottom() {
@@ -47,6 +179,18 @@ function appendBubble(role, content, meta = {}) {
   bubble.innerHTML = `<div class="bubble-header"><span class="bubble-author">${author}</span>${tag}</div><div class="bubble-body">${formatContent(content)}</div>`;
   container.appendChild(bubble);
   scrollToBottom();
+
+  if (!meta.skipSave) {
+    const sess = getActiveSession();
+    sess.messages.push({ role, content, model: meta.model || '', timestamp: Date.now() });
+    sess.updatedAt = Date.now();
+    if (sess.messages.length === 1 && role === 'user') {
+      sess.title = content.slice(0, 36).trim() + (content.length > 36 ? '...' : '');
+    }
+    persistSessions();
+    renderSessionsList();
+  }
+
   return bubble;
 }
 
@@ -75,7 +219,7 @@ async function loadWorkspaceTree(wsPath) {
   const drawer = document.getElementById('chatFilesDrawer');
   if (!listEl || !drawer) return;
   drawer.hidden = false;
-  listEl.innerHTML = '<span class="hint">Carregando arquivos do projeto...</span>';
+  listEl.innerHTML = '<span class="hint">Carregando arquivos do projeto em Downloads...</span>';
   try {
     const res = await fetch(`/api/workspaces/tree?path=${encodeURIComponent(wsPath)}`).then((r) => r.json());
     if (!res.files?.length) {
@@ -117,7 +261,7 @@ async function attachFileToChat(relPath) {
 async function saveFileDirectly(relPath, rawCode) {
   const ws = document.getElementById('chatWorkspaceSelect')?.value || currentWorkspace;
   if (!ws) {
-    alert('Selecione um projeto Antigravity ativo primeiro.');
+    alert('Selecione um projeto ativo primeiro.');
     return;
   }
   try {
@@ -164,7 +308,12 @@ async function handleStreamResponse(res, bubbleBody, modelId) {
     }
   }
 
-  history.push({ role: 'assistant', content: accumulated });
+  const sess = getActiveSession();
+  sess.messages.push({ role: 'assistant', content: accumulated, model: modelId, timestamp: Date.now() });
+  sess.updatedAt = Date.now();
+  persistSessions();
+  renderSessionsList();
+
   updateMessageCount();
   window.fox?.setMood?.('celebrating');
 }
@@ -177,7 +326,6 @@ async function submitChat(prompt) {
   const humanToggle = document.getElementById('chatHumanModeToggle');
   const modelId = modelSel?.value || 'gemini-3.8-pro';
 
-  history.push({ role: 'user', content: prompt });
   appendBubble('user', prompt);
   if (input) input.value = '';
   updateMessageCount();
@@ -186,9 +334,10 @@ async function submitChat(prompt) {
   if (btn) btn.disabled = true;
   window.fox?.setMood?.('routing');
 
-  const botBubble = appendBubble('assistant', 'Pensando...', { model: modelId });
+  const botBubble = appendBubble('assistant', 'Pensando...', { model: modelId, skipSave: true });
   const bubbleBody = botBubble.querySelector('.bubble-body');
 
+  const sess = getActiveSession();
   try {
     const res = await fetch('/v1/chat/completions', {
       method: 'POST',
@@ -199,7 +348,7 @@ async function submitChat(prompt) {
       body: JSON.stringify({
         model: modelId,
         stream: true,
-        messages: history.map((m) => ({ role: m.role, content: m.content }))
+        messages: sess.messages.map((m) => ({ role: m.role, content: m.content }))
       })
     });
 
@@ -222,49 +371,77 @@ async function submitChat(prompt) {
   }
 }
 
-function initChatListeners() {
+function openFullscreenChat() {
+  const section = document.getElementById('chatSection');
+  if (section) {
+    section.classList.add('is-fullscreen');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('chatInput')?.focus();
+  }
+}
+
+function closeFullscreenChat() {
+  const section = document.getElementById('chatSection');
+  if (section) {
+    section.classList.remove('is-fullscreen');
+    document.body.style.overflow = '';
+  }
+}
+
+function bindChatFormEvents() {
   const form = document.getElementById('chatForm');
   const input = document.getElementById('chatInput');
-  const clearBtn = document.getElementById('chatClearBtn');
-  const wsSelect = document.getElementById('chatWorkspaceSelect');
-  const exploreBtn = document.getElementById('chatExploreFilesBtn');
-  const closeDrawer = document.getElementById('closeDrawerBtn');
-
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
     if (input) submitChat(input.value);
   });
-
   input?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       form?.dispatchEvent(new Event('submit', { cancelable: true }));
     }
   });
+}
 
-  clearBtn?.addEventListener('click', () => {
-    history.length = 0;
-    const msgContainer = document.getElementById('chatMessages');
-    if (msgContainer) {
-      msgContainer.querySelectorAll('.chat-bubble:not(.intro-msg)').forEach((el) => el.remove());
-    }
-    updateMessageCount();
+function bindChatControlEvents() {
+  document.getElementById('chatExpandBtn')?.addEventListener('click', openFullscreenChat);
+  document.getElementById('chatCollapseBtn')?.addEventListener('click', closeFullscreenChat);
+  document.getElementById('newChatSessionBtn')?.addEventListener('click', startNewSession);
+  document.getElementById('chatClearBtn')?.addEventListener('click', () => {
+    const sess = getActiveSession();
+    sess.messages = [];
+    sess.updatedAt = Date.now();
+    persistSessions();
+    renderActiveSessionMessages();
   });
-
-  wsSelect?.addEventListener('change', (e) => {
+  document.getElementById('chatWorkspaceSelect')?.addEventListener('change', (e) => {
     currentWorkspace = e.target.value;
   });
-
-  exploreBtn?.addEventListener('click', () => {
-    const ws = wsSelect?.value || currentWorkspace;
+  document.getElementById('chatExploreFilesBtn')?.addEventListener('click', () => {
+    const ws = document.getElementById('chatWorkspaceSelect')?.value || currentWorkspace;
     if (ws) loadWorkspaceTree(ws);
   });
-
-  closeDrawer?.addEventListener('click', () => {
+  document.getElementById('closeDrawerBtn')?.addEventListener('click', () => {
     document.getElementById('chatFilesDrawer').hidden = true;
   });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeFullscreenChat();
+  });
+}
 
+function bindChatGlobalClickEvents() {
   document.addEventListener('click', (e) => {
+    const sessItem = e.target.closest('.session-item');
+    const delBtn = e.target.closest('.session-del-btn');
+    if (delBtn?.dataset?.delId) {
+      e.stopPropagation();
+      deleteSession(delBtn.dataset.delId);
+      return;
+    }
+    if (sessItem?.dataset?.sessId) {
+      switchSession(sessItem.dataset.sessId);
+      return;
+    }
     const pill = e.target.closest('.quick-pill');
     if (pill?.dataset?.prompt) submitChat(pill.dataset.prompt);
 
@@ -280,5 +457,26 @@ function initChatListeners() {
   });
 }
 
-populateModelsAndWorkspaces();
+function initChatListeners() {
+  bindChatFormEvents();
+  bindChatControlEvents();
+  bindChatGlobalClickEvents();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('mode') === 'chat' || window.location.pathname === '/chat') {
+    openFullscreenChat();
+  }
+}
+
+window.kitsuneChat = {
+  openFullscreen: openFullscreenChat,
+  closeFullscreen: closeFullscreenChat,
+  newSession: startNewSession
+};
+
+loadSessionsFromStorage();
+populateModelsAndWorkspaces().then(() => {
+  renderSessionsList();
+  renderActiveSessionMessages();
+});
 initChatListeners();

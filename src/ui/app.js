@@ -83,6 +83,16 @@ function render() {
   $('pillTok').textContent = int.format(usage.totalInputTokens + usage.totalOutputTokens);
   $('pillModel').textContent = config.activeModelId;
 
+  const mcpBtn = $('mcpToggleBtn');
+  if (mcpBtn) {
+    const isMcpOn = config.mcpEnabled !== false;
+    mcpBtn.textContent = isMcpOn ? '⚡ MCP: ATIVO' : '⏸️ MCP: DESLIGADO';
+    mcpBtn.className = `carimbo mcp-toggle-btn ${isMcpOn ? 'is-active' : 'is-inactive'}`;
+    mcpBtn.title = isMcpOn
+      ? 'MCP Kitsune ativo no Antigravity. Clique para desligar e ter zero interferência.'
+      : 'MCP Kitsune desligado. Clique para reativar.';
+  }
+
   renderSlots(slots);
   renderLedger(usage.recentEntries);
   $('mcpSnippet').textContent = integration.mcpConfigJson;
@@ -434,6 +444,20 @@ function applyDockTab(tab) {
 $('dockTabs').addEventListener('click', (e) => {
   const tab = e.target.closest('.seg-tab')?.dataset.tab;
   if (tab) applyDockTab(tab);
+});
+
+$('mcpToggleBtn')?.addEventListener('click', async () => {
+  try {
+    const r = await api('/api/config/mcp-toggle', { method: 'POST' });
+    fox.speak(r.mcpEnabled ? '⚡ MCP Ativado no Antigravity!' : '⏸️ MCP Desligado! Zero interferência na IDE.', 'idle');
+    await refresh();
+  } catch (err) {
+    alert(`Erro ao alternar MCP: ${err.message}`);
+  }
+});
+
+$('chatFullscreenTopBtn')?.addEventListener('click', () => {
+  window.kitsuneChat?.openFullscreen?.();
 });
 
 setInterval(() => { if (state) renderSlots(state.slots); }, 1000);

@@ -53,6 +53,8 @@
         </div>
       </div>
       <div class="header-tray">
+        <button id="mcpToggleBtn" class="carimbo mcp-toggle-btn is-active" type="button" title="Ligar ou desligar o servidor MCP Kitsune no Antigravity">⚡ MCP: ATIVO</button>
+        <button id="chatFullscreenTopBtn" class="carimbo accent" type="button" title="Abrir Chat Kitsune em Tela Cheia (Modo Expandido)">💬 Chat Tela Cheia</button>
         <button id="beretBtn" class="carimbo skin" type="button" aria-pressed="false">🎭 Boina PRESS</button>
         <button id="pauseBtn" class="carimbo" type="button" aria-pressed="false">⚡ 60 FPS</button>
         <button id="themeBtn" class="carimbo" type="button" aria-pressed="false">Tema escuro</button>
@@ -162,65 +164,89 @@
           <p class="sub">Converse diretamente com seus modelos rotacionados (Google 3.8 Pro, Gemini 4, Claude, DeepSeek, Ollama) com streaming e zero consumo da cota da IDE.</p>
         </div>
         <div class="inline-row">
+          <button id="chatExpandBtn" class="carimbo accent" type="button" title="Expandir Chat para Tela Cheia Zen (Estilo Meu Amigo Jornalista)">⛶ Tela Cheia</button>
           <select id="chatModelSelect" class="chat-model-select" aria-label="Modelo do Chat">
             <option value="">Carregando modelos do cofre...</option>
           </select>
-          <button id="chatClearBtn" class="carimbo" type="button" title="Limpar conversa">🗑️ Nova Conversa</button>
+          <button id="chatClearBtn" class="carimbo" type="button" title="Limpar conversa atual">🗑️ Limpar</button>
         </div>
       </div>
 
-      <div class="workspace-bar" aria-label="Integração de Arquivos do Antigravity">
-        <div class="ws-select-wrap">
-          <label for="chatWorkspaceSelect">📂 Projeto Antigravity:</label>
-          <select id="chatWorkspaceSelect">
-            <option value="">Detectando projetos do Antigravity...</option>
-          </select>
+      <!-- SIDEBAR DE SESSÕES (MODO TELA CHEIA ZEN) -->
+      <aside id="chatSidebar" class="chat-sidebar" aria-label="Histórico de Sessões">
+        <button id="newChatSessionBtn" class="carimbo accent" type="button">+ Nova Conversa</button>
+        <div class="sessions-header">
+          <span>Conversas Salvas</span>
+          <span id="sessionCount">0</span>
         </div>
-        <div class="ws-actions">
-          <button id="chatExploreFilesBtn" class="carimbo" type="button">📁 Explorar Arquivos</button>
-          <label class="toggle-pill" title="Respostas ricas, sem clichês de IA e com ritmo humano natural (Eesel AI)">
-            <input type="checkbox" id="chatHumanModeToggle" checked>
-            <span>🔥 Modo Humano Eesel</span>
-          </label>
-        </div>
-      </div>
+        <div id="chatSessionsList" class="session-list"></div>
+      </aside>
 
-      <div id="chatFilesDrawer" class="chat-files-drawer" hidden>
-        <div class="drawer-header">
-          <span id="drawerTitle">Arquivos do Projeto</span>
-          <button id="closeDrawerBtn" class="carimbo-mini" type="button">✖ Fechar</button>
+      <!-- ÁREA PRINCIPAL DO CHAT -->
+      <div class="chat-main-area">
+        <div class="chat-zen-topbar" id="chatZenTopbar">
+          <div class="zen-title-row">
+            <span class="zen-mascot-pill">🦊 Kitsune Zen</span>
+            <span class="sub" id="zenSessionTitle">Conversa Atual</span>
+          </div>
+          <div class="inline-row">
+            <button id="chatCollapseBtn" class="carimbo square" type="button" title="Minimizar Tela Cheia (Esc)">✕ Fechar</button>
+          </div>
         </div>
-        <div id="drawerFileList" class="drawer-file-list"></div>
-      </div>
 
-      <div class="chat-container">
-        <div id="chatMessages" class="chat-messages" role="log" aria-live="polite">
-          <div class="chat-bubble kitsune-bubble intro-msg">
-            <div class="bubble-header">
-              <span class="bubble-author">🦊 Kitsune Companion</span>
-              <span class="bubble-tag">ONLINE · COTA INDEPENDENTE</span>
-            </div>
-            <div class="bubble-body">
-              <p>Olá! Este é seu ambiente de chat direto integrado aos projetos do Antigravity. As mensagens são processadas pelas chaves cadastradas no seu cofre DPAPI com failover 429 automático, sem consumir sua cota da IDE.</p>
-              <div class="quick-prompts">
-                <button type="button" class="quick-pill" data-prompt="Liste os arquivos e a arquitetura geral do projeto ativo">📂 Analisar este projeto</button>
-                <button type="button" class="quick-pill" data-prompt="Crie um script TypeScript para demonstrar o uso do Kitsune Router">💡 Exemplo TypeScript</button>
-                <button type="button" class="quick-pill" data-prompt="Como funciona a rotação automática quando uma conta recebe erro HTTP 429?">🛡️ Explique o 429 Failover</button>
+        <div class="workspace-bar" aria-label="Integração de Arquivos do Antigravity">
+          <div class="ws-select-wrap">
+            <label for="chatWorkspaceSelect">📂 Projeto Real (Downloads):</label>
+            <select id="chatWorkspaceSelect">
+              <option value="">Detectando projetos em Downloads...</option>
+            </select>
+          </div>
+          <div class="ws-actions">
+            <button id="chatExploreFilesBtn" class="carimbo" type="button">📁 Explorar Arquivos</button>
+            <label class="toggle-pill" title="Respostas ricas, sem clichês de IA e com ritmo humano natural (Eesel AI)">
+              <input type="checkbox" id="chatHumanModeToggle" checked>
+              <span>🔥 Modo Humano Eesel</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="chatFilesDrawer" class="chat-files-drawer" hidden>
+          <div class="drawer-header">
+            <span id="drawerTitle">Arquivos do Projeto</span>
+            <button id="closeDrawerBtn" class="carimbo-mini" type="button">✖ Fechar</button>
+          </div>
+          <div id="drawerFileList" class="drawer-file-list"></div>
+        </div>
+
+        <div class="chat-container">
+          <div id="chatMessages" class="chat-messages" role="log" aria-live="polite">
+            <div class="chat-bubble kitsune-bubble intro-msg">
+              <div class="bubble-header">
+                <span class="bubble-author">🦊 Kitsune Companion</span>
+                <span class="bubble-tag">ONLINE · COTA INDEPENDENTE</span>
+              </div>
+              <div class="bubble-body">
+                <p>Olá! Este é seu ambiente de chat direto com tela cheia estilo Meu Amigo Jornalista, histórico completo de conversas e integração real com seus projetos na pasta Downloads. Suas mensagens são processadas pelas contas cadastradas no cofre DPAPI com failover 429 automático.</p>
+                <div class="quick-prompts">
+                  <button type="button" class="quick-pill" data-prompt="Liste os arquivos e a arquitetura geral do projeto ativo">📂 Analisar este projeto</button>
+                  <button type="button" class="quick-pill" data-prompt="Crie um script TypeScript para demonstrar o uso do Kitsune Router">💡 Exemplo TypeScript</button>
+                  <button type="button" class="quick-pill" data-prompt="Como funciona a rotação automática quando uma conta recebe erro HTTP 429?">🛡️ Explique o 429 Failover</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <form id="chatForm" class="chat-input-bar">
-          <div class="chat-input-wrapper">
-            <textarea id="chatInput" rows="1" placeholder="Converse com a Kitsune... (Enter envia, Shift+Enter pula linha)" required></textarea>
-            <button id="chatSendBtn" class="carimbo accent chat-send-btn" type="submit">Enviar ↵</button>
-          </div>
-          <div class="chat-bar-meta">
-            <span id="chatStreamStatus" class="chat-status-indicator">⚡ Streaming SSE ativo · Acesso a arquivos habilitado</span>
-            <span id="chatTokensCounter" class="chat-tokens-meta">0 msgs</span>
-          </div>
-        </form>
+          <form id="chatForm" class="chat-input-bar">
+            <div class="chat-input-wrapper">
+              <textarea id="chatInput" rows="1" placeholder="Converse com a Kitsune... (Enter envia, Shift+Enter pula linha)" required></textarea>
+              <button id="chatSendBtn" class="carimbo accent chat-send-btn" type="submit">Enviar ↵</button>
+            </div>
+            <div class="chat-bar-meta">
+              <span id="chatStreamStatus" class="chat-status-indicator">⚡ Streaming SSE ativo · Projetos reais de Downloads habilitados</span>
+              <span id="chatTokensCounter" class="chat-tokens-meta">0 msgs</span>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
 

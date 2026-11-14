@@ -41,6 +41,7 @@ import {
 const STATIC_FILES: Readonly<Record<string, { file: string; mime: string }>> = {
   '/': { file: 'index.html', mime: 'text/html; charset=utf-8' },
   '/pill': { file: 'index.html', mime: 'text/html; charset=utf-8' },
+  '/chat': { file: 'index.html', mime: 'text/html; charset=utf-8' },
   '/index.html': { file: 'index.html', mime: 'text/html; charset=utf-8' },
   '/styles.css': { file: 'styles.css', mime: 'text/css; charset=utf-8' },
   '/kitsune-svg.js': { file: 'kitsune-svg.js', mime: 'application/javascript; charset=utf-8' },
@@ -291,6 +292,12 @@ export class HttpGatewayAdapter {
     if (req.method === 'GET' && pathname === '/api/state') {
       const snapshot = this.orchestrator.getStateSnapshot(35);
       sendJson(res, 200, { ...snapshot, integration: buildIntegrationSnippets(this.boundPort, this.cliEntryPath) });
+      return;
+    }
+    if (req.method === 'POST' && pathname === '/api/config/mcp-toggle') {
+      const current = this.orchestrator.getConfig();
+      const updated = await this.orchestrator.setActiveProfile({ mcpEnabled: current.mcpEnabled === false });
+      sendJson(res, 200, { ok: true, mcpEnabled: updated.mcpEnabled });
       return;
     }
     if (req.method === 'POST' && pathname === '/api/slots') {

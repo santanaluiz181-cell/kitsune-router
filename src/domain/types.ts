@@ -104,6 +104,7 @@ export interface RouterConfig {
   policy: RoutingPolicy;
   defaultSensitivity: SensitivityLevel;
   httpPort: number;
+  mcpEnabled?: boolean;
 }
 
 export interface CompletionResponse {

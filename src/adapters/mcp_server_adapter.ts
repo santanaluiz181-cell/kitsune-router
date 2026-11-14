@@ -144,6 +144,24 @@ export class McpServerAdapter {
       return rpcResult(id, {});
     }
 
+    const cfg = this.orchestrator.getConfig();
+    if (cfg.mcpEnabled === false) {
+      if (msg.method === 'tools/list') {
+        return rpcResult(id, { tools: [] });
+      }
+      if (msg.method === 'tools/call') {
+        return rpcResult(id, {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: 'Kitsune MCP está DESATIVADO no painel. O Antigravity operará diretamente com seus recursos padrão sem interferência do Kitsune.'
+            }
+          ]
+        });
+      }
+    }
+
     if (msg.method === 'tools/list') {
       return rpcResult(id, { tools: MCP_TOOLS });
     }

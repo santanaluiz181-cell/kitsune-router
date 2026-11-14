@@ -186,6 +186,14 @@ test('MCP JSON-RPC: initialize, tools/list, tools/call', async () => {
 
   const empty = await mcp.handleMessage({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'kitsune_route_prompt', arguments: {} } });
   assert.equal((empty!.result as { isError: boolean }).isError, true);
+
+  await orch.setActiveProfile({ mcpEnabled: false });
+  const disabledList = await mcp.handleMessage({ jsonrpc: '2.0', id: 99, method: 'tools/list' });
+  assert.equal((disabledList!.result as { tools: unknown[] }).tools.length, 0);
+  const disabledCall = await mcp.handleMessage({ jsonrpc: '2.0', id: 100, method: 'tools/call', params: { name: 'kitsune_route_prompt', arguments: { prompt: 'teste' } } });
+  assert.equal((disabledCall!.result as { isError: boolean }).isError, true);
+  await orch.setActiveProfile({ mcpEnabled: true });
+
   const badPolicy = await mcp.handleMessage({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'kitsune_set_active_profile', arguments: { policy: 'xx' } } });
   assert.equal((badPolicy!.result as { isError: boolean }).isError, true);
   const unknown = await mcp.handleMessage({ jsonrpc: '2.0', id: 6, method: 'nada' });
