@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { rename, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -39,6 +39,10 @@ export function resolveKitsuneDataDir(explicitDir?: string): string {
   }
   if (process.env.KITSUNE_DATA_DIR && process.env.KITSUNE_DATA_DIR.trim()) {
     return path.resolve(process.env.KITSUNE_DATA_DIR.trim());
+  }
+  const canonicalDir = path.resolve('C:/Users/tharcio/kitsune-router/data');
+  if (existsSync(canonicalDir)) {
+    return canonicalDir;
   }
   return path.resolve(process.cwd(), 'data');
 }
@@ -86,20 +90,41 @@ export class DpapiVaultAdapter implements VaultPort {
   private readonly cipher: SecretCipher;
   private doc: PersistedVaultDocument;
   private writeQueue: Promise<void>;
+  private lastMtimeMs = 0;
 
   constructor(dataDir: string = resolveKitsuneDataDir(), cipher: SecretCipher = new WindowsDpapiCipher()) {
     mkdirSync(dataDir, { recursive: true });
     this.filePath = path.join(dataDir, 'vault.enc.json');
     this.cipher = cipher;
     this.doc = loadVaultDocument(this.filePath);
+    try {
+      this.lastMtimeMs = existsSync(this.filePath) ? statSync(this.filePath).mtimeMs : 0;
+    } catch {
+      this.lastMtimeMs = 0;
+    }
     this.writeQueue = Promise.resolve();
   }
 
+  private reloadIfDiskChanged(): void {
+    try {
+      if (!existsSync(this.filePath)) return;
+      const mtime = statSync(this.filePath).mtimeMs;
+      if (mtime > this.lastMtimeMs) {
+        this.doc = loadVaultDocument(this.filePath);
+        this.lastMtimeMs = mtime;
+      }
+    } catch {
+      // Ignorar erros transientes de lock no Windows
+    }
+  }
+
   listSlotMetadata(): KeySlotMetadata[] {
+    this.reloadIfDiskChanged();
     return this.doc.slots.map((slot) => ({ ...slot, allowedModels: [...slot.allowedModels] }));
   }
 
   getSlotMetadata(slotId: string): KeySlotMetadata | undefined {
+    this.reloadIfDiskChanged();
     const found = this.doc.slots.find((slot) => slot.id === slotId);
     return found ? { ...found, allowedModels: [...found.allowedModels] } : undefined;
   }
@@ -168,12 +193,14 @@ export class DpapiVaultAdapter implements VaultPort {
   }
 
   async getSecret(slotId: string): Promise<string | null> {
+    this.reloadIfDiskChanged();
     const record = this.doc.secrets[slotId];
     if (!record) return null;
     return this.cipher.decrypt(record);
   }
 
   getConfig(): RouterConfig {
+    this.reloadIfDiskChanged();
     return { ...this.doc.config };
   }
 
