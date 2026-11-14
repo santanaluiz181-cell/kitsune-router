@@ -64,6 +64,7 @@
 
     <nav class="dock-tabs" id="dockTabs" role="tablist" aria-label="Visões da bancada">
       <button class="seg-tab active" type="button" role="tab" aria-selected="true" data-tab="all">PAINEL COMPLETO</button>
+      <button class="seg-tab" type="button" role="tab" aria-selected="false" data-tab="chat">💬 CHAT KITSUNE (WEB)</button>
       <button class="seg-tab" type="button" role="tab" aria-selected="false" data-tab="test">TESTAR ROTEADOR</button>
       <button class="seg-tab" type="button" role="tab" aria-selected="false" data-tab="vault">COFRE DPAPI</button>
       <button class="seg-tab" type="button" role="tab" aria-selected="false" data-tab="ledger">ANTIGRAVITY &amp; LOGS</button>
@@ -153,6 +154,51 @@
         </section>
       </div>
     </div>
+
+    <section id="chatSection" class="board-card section-gap" data-tabs="all chat" aria-labelledby="h-chat">
+      <div class="card-head">
+        <div>
+          <h2 id="h-chat">💬 CHAT KITSUNE · WEB CONVERSACIONAL</h2>
+          <p class="sub">Converse diretamente com seus modelos rotacionados (Google 3.8 Pro, Gemini 4, Claude, DeepSeek, Ollama) com streaming e zero consumo da cota da IDE.</p>
+        </div>
+        <div class="inline-row">
+          <select id="chatModelSelect" class="chat-model-select" aria-label="Modelo do Chat">
+            <option value="">Carregando modelos do cofre...</option>
+          </select>
+          <button id="chatClearBtn" class="carimbo" type="button" title="Limpar conversa">🗑️ Nova Conversa</button>
+        </div>
+      </div>
+
+      <div class="chat-container">
+        <div id="chatMessages" class="chat-messages" role="log" aria-live="polite">
+          <div class="chat-bubble kitsune-bubble intro-msg">
+            <div class="bubble-header">
+              <span class="bubble-author">🦊 Kitsune Companion</span>
+              <span class="bubble-tag">ONLINE · COTA INDEPENDENTE</span>
+            </div>
+            <div class="bubble-body">
+              <p>Olá! Este é seu ambiente de chat direto. Pode conversar comigo normalmente por aqui! As mensagens são processadas pelas chaves cadastradas no seu cofre DPAPI com failover 429 automático, sem consumir sua cota do Antigravity.</p>
+              <div class="quick-prompts">
+                <button type="button" class="quick-pill" data-prompt="Crie um script TypeScript para demonstrar o uso do Kitsune Router">💡 Exemplo TypeScript</button>
+                <button type="button" class="quick-pill" data-prompt="Como funciona a rotação automática quando uma conta recebe erro HTTP 429?">🛡️ Explique o 429 Failover</button>
+                <button type="button" class="quick-pill" data-prompt="Escreva uma função moderna em Python para processamento de dados">🐍 Função Python</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form id="chatForm" class="chat-input-bar">
+          <div class="chat-input-wrapper">
+            <textarea id="chatInput" rows="1" placeholder="Converse com a Kitsune... (Enter envia, Shift+Enter pula linha)" required></textarea>
+            <button id="chatSendBtn" class="carimbo accent chat-send-btn" type="submit">Enviar ↵</button>
+          </div>
+          <div class="chat-bar-meta">
+            <span id="chatStreamStatus" class="chat-status-indicator">⚡ Streaming SSE ativo · Totalmente independente</span>
+            <span id="chatTokensCounter" class="chat-tokens-meta">0 msgs</span>
+          </div>
+        </form>
+      </div>
+    </section>
 
     <section class="board-card section-gap" data-tabs="all vault" aria-labelledby="h-slots">
       <div class="card-head">
@@ -265,5 +311,6 @@
   </dialog>
 
   <script type="module" src="/app.js"></script>
+  <script type="module" src="/kitsune-chat.js"></script>
 </body>
 </html>

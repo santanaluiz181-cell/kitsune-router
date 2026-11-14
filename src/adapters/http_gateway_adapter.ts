@@ -39,6 +39,7 @@ const STATIC_FILES: Readonly<Record<string, { file: string; mime: string }>> = {
   '/styles.css': { file: 'styles.css', mime: 'text/css; charset=utf-8' },
   '/kitsune-svg.js': { file: 'kitsune-svg.js', mime: 'application/javascript; charset=utf-8' },
   '/kitsune-mascot.js': { file: 'kitsune-mascot.js', mime: 'application/javascript; charset=utf-8' },
+  '/kitsune-chat.js': { file: 'kitsune-chat.js', mime: 'application/javascript; charset=utf-8' },
   '/app.js': { file: 'app.js', mime: 'application/javascript; charset=utf-8' },
   '/kitsune-logo.png': { file: 'kitsune-logo.png', mime: 'image/png' },
   '/favicon.ico': { file: 'kitsune-logo.png', mime: 'image/png' },
