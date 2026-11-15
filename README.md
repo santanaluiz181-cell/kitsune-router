@@ -125,12 +125,22 @@ When the MCP bridge starts:
    - **`kitsune_read_workspace_file`**: read targeted file sections with StartLine/EndLine pagination.
    - **`kitsune_write_workspace_file`**: apply surgical edits and file creations directly to local projects.
 
-### 3. Lightweight Model Delegation (Gemini 3.8 Flash Low + MCP)
+### 3. Lightweight Model Delegation & Interactive Toggle Menu (Gemini 3.8 Flash Low vs Kitsune MCP)
 
-When your quota is running low on high-tier models:
-1. Select **Gemini 3.8 Flash** with low reasoning effort in Antigravity.
-2. Delegate code analysis and file modifications directly to the **Kitsune MCP** tools (`kitsune_read_workspace_file`, `kitsune_write_workspace_file`).
-3. The lightweight model acts as an agile controller, reading only needed file slices and applying surgical patches without exhausting context windows or token quotas.
+When operating with **Gemini 3.8 Flash** on low reasoning effort or initiating quota-heavy tasks, the assistant automatically opens the interactive decision prompt (`ask_question`):
+
+1. **Turn ON Kitsune Router MCP**:
+   - **User Choice**: Turn on MCP (Use Kitsune Router rotated APIs).
+   - **Server State**: `POST /api/config/mcp-toggle` triggered → `mcpEnabled: true`.
+   - **Active Behavior**: Prompts and tools rotate across DPAPI vault providers (Google AI Studio, WusRouter, NVIDIA, FreeBuffer, Ollama) with 429 failover without consuming IDE token limits.
+
+2. **Turn OFF MCP**:
+   - **User Choice**: Turn off MCP (Use native Gemini 3.8 Flash Low in Antigravity IDE).
+   - **Server State**: `POST /api/config/mcp-toggle` triggered → `mcpEnabled: false`.
+   - **Active Behavior**: Zero calls to Kitsune Router MCP. All executions, file reads, and tool invocations run directly on the native IDE model.
+
+> **Persistent Status Footer**:
+> Every agent status response reports the current routing state and allows the user to switch at any moment by asking to turn MCP on or off.
 
 ### 4. Optional Agent Skill (`skills/kitsune-router/SKILL.md`)
 

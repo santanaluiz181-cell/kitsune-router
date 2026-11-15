@@ -125,12 +125,22 @@ Quando o servidor MCP inicia:
    - **`kitsune_read_workspace_file`**: lê trechos de arquivos com paginação cirúrgica (StartLine/EndLine).
    - **`kitsune_write_workspace_file`**: cria ou aplica modificações pontuais diretamente nos arquivos locais.
 
-### 3. Fluxo Econômico de Tokens (Gemini 3.8 Flash Low + Kitsune MCP)
+### 3. Fluxo Econômico de Tokens & Menu Interativo (Gemini 3.8 Flash Low vs Kitsune MCP)
 
-Quando a cota dos modelos pesados estiver no fim:
-1. Ative o **Gemini 3.8 Flash** com raciocínio baixo (`low`) no seletor de modelos do Antigravity.
-2. O modelo leve utiliza as ferramentas MCP do Kitsune (`kitsune_read_workspace_file` e `kitsune_write_workspace_file`) como braço mecânico para ler e alterar o código específico (partes X e Y do projeto).
-3. Isso garante continuidade operacional ilimitada sem estourar o limite de tokens do modelo principal.
+Ao operar no **Gemini 3.8 Flash** com raciocínio baixo (`low`) ou ao iniciar tarefas com alta demanda de tokens/cota, o assistente aciona a caixa interativa de múltipla escolha (`ask_question`):
+
+1. **Ligar Kitsune Router MCP**:
+   - **Decisão do Usuário**: Ligar MCP (Usar as APIs rotativas do Kitsune Router).
+   - **Estado do Servidor**: `POST /api/config/mcp-toggle` acionado → `mcpEnabled: true`.
+   - **Comportamento Atual**: As chamadas são distribuídas entre os slots do cofre (Google AI Studio, WusRouter, NVIDIA, FreeBuffer, Ollama) com failover 429 automático, sem consumir cota da IDE.
+
+2. **Desligar MCP**:
+   - **Decisão do Usuário**: Desligar MCP (Usar o Gemini 3.8 Flash Low nativo da IDE Antigravity).
+   - **Estado do Servidor**: `POST /api/config/mcp-toggle` acionado → `mcpEnabled: false`.
+   - **Comportamento Atual**: Zero chamadas para o MCP Kitsune Router. Todas as execuções, leituras e escritas rodam diretamente pelo modelo nativo da IDE.
+
+> **Rodapé de Feedback Contínuo**:
+> O assistente reporta o estado no encerramento da resposta e permite ao operador alternar instantaneamente a qualquer momento dizendo "ligar MCP" ou "desligar MCP".
 
 ### 4. Conecte Contas e Chaves no Cofre DPAPI
 

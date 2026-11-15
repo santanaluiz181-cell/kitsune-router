@@ -35,3 +35,24 @@ Ao operar no **Gemini 3.8 Flash (Low)** ou ao iniciar tarefas com alta demanda d
 1. **Ligar Kitsune Router MCP**: Ativa as APIs rotativas do cofre (Google AI Studio, WusRouter, NVIDIA, FreeBuffer, Ollama) com failover 429 e proteção de cotas da IDE.
 2. **Desligar MCP**: Mantém o fluxo direto no Gemini 3.8 Flash Low nativo da IDE, sem intermediários.
 
+## Feedback de Status Obrigatório
+
+Em respostas de governança ou status do roteador, o assistente deve anexar no encerramento o bloco de feedback demonstrando o estado atual e o comando para alternância:
+
+- **Quando DESLIGADO**:
+  ```
+  Decisão do Usuário: Desligar MCP (Usar o Gemini 3.8 Flash Low nativo da IDE Antigravity).
+  Estado do Servidor: POST /api/config/mcp-toggle acionado → mcpEnabled: false.
+  Comportamento Atual: Zero chamadas para o MCP Kitsune Router. Todas as execuções, leituras e escritas rodam diretamente pelo modelo nativo da IDE.
+  ```
+  *(O usuário pode reativar a qualquer momento dizendo "ligar MCP")*
+
+- **Quando LIGADO**:
+  ```
+  Decisão do Usuário: Ligar MCP (Usar as APIs rotativas do Kitsune Router).
+  Estado do Servidor: POST /api/config/mcp-toggle acionado → mcpEnabled: true.
+  Comportamento Atual: Requisições e chamadas roteadas com failover 429 entre as contas do cofre.
+  ```
+  *(O usuário pode desativar a qualquer momento dizendo "desligar MCP")*
+
+
