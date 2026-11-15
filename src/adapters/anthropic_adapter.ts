@@ -12,10 +12,13 @@ import {
   safeJsonParse
 } from './gemini_adapter.ts';
 
-interface AnthropicContentBlock {
-  type?: string;
-  text?: string;
-}
+import {
+  buildAnthropicMessages,
+  buildAnthropicToolChoice,
+  buildAnthropicTools,
+  extractAnthropicResponse
+} from './anthropic_tools.ts';
+import type { AnthropicContentBlock } from './anthropic_tools.ts';
 
 interface AnthropicResponseJson {
   content?: AnthropicContentBlock[];
@@ -59,18 +62,14 @@ export class AnthropicAdapter implements ProviderPort {
       throw new ProviderRequestError(errorMsg, response.status, retryAfterMs);
     }
 
-    const text = (parsed?.content ?? [])
-      .filter((block) => block.type === 'text' && typeof block.text === 'string')
-      .map((block) => block.text ?? '')
-      .join('')
-      .trim();
-
-    if (!text) {
+    const { text, toolCalls } = extractAnthropicResponse(parsed?.content);
+    if (!text && (!toolCalls || toolCalls.length === 0)) {
       throw new ProviderRequestError('Anthropic Claude retornou resposta vazia', 502, null);
     }
 
     return {
       text,
+      ...(toolCalls && toolCalls.length > 0 ? { toolCalls } : {}),
       modelId: input.model.id,
       provider: input.slot.provider,
       inputTokens: safeInt(parsed?.usage?.input_tokens),
@@ -121,27 +120,10 @@ export function buildAnthropicHeaders(rawSecret: string): Record<string, string>
 }
 
 function buildAnthropicPayload(input: ProviderSendInput): Record<string, unknown> {
-  const systemParts: string[] = [];
-  const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  const { systemParts, turns } = buildAnthropicMessages(input.messages as ChatMessage[]);
 
-  for (const msg of input.messages as ChatMessage[]) {
-    const clean = msg.content.trim();
-    if (!clean) continue;
-    if (msg.role === 'system') {
-      systemParts.push(clean);
-      continue;
-    }
-    const role: 'user' | 'assistant' = msg.role === 'assistant' ? 'assistant' : 'user';
-    const last = messages[messages.length - 1];
-    if (last && last.role === role) {
-      last.content = `${last.content}\n\n${clean}`;
-    } else {
-      messages.push({ role, content: clean });
-    }
-  }
-
-  if (messages.length === 0) {
-    messages.push({ role: 'user', content: 'Ping' });
+  if (turns.length === 0) {
+    turns.push({ role: 'user', content: 'Ping' });
   }
 
   const maxTokens =
@@ -152,8 +134,14 @@ function buildAnthropicPayload(input: ProviderSendInput): Record<string, unknown
   const payload: Record<string, unknown> = {
     model: input.model.upstreamModelId,
     max_tokens: maxTokens,
-    messages
+    messages: turns
   };
+  const tools = buildAnthropicTools(input.tools);
+  if (tools) {
+    payload.tools = tools;
+    const choice = buildAnthropicToolChoice(input.toolChoice);
+    if (choice) payload.tool_choice = choice;
+  }
   if (systemParts.length > 0) {
     payload.system = systemParts.join('\n\n');
   }

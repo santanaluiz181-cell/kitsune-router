@@ -41,6 +41,7 @@ import {
   listAntigravityConversations,
   getAntigravityTranscriptMessages
 } from './antigravity_conversation_adapter.ts';
+import { handleAnthropicMessages, handleAnthropicModels } from './anthropic_gateway.ts';
 
 const STATIC_FILES: Readonly<Record<string, { file: string; mime: string }>> = {
   '/': { file: 'index.html', mime: 'text/html; charset=utf-8' },
@@ -194,11 +195,22 @@ export class HttpGatewayAdapter {
 
   private async handleOpenAiRoute(req: IncomingMessage, res: ServerResponse, pathname: string): Promise<void> {
     if (req.method === 'GET' && pathname === '/v1/models') {
+      const authHeader = String(req.headers.authorization ?? '');
+      const userAgent = String(req.headers['user-agent'] ?? '');
+      const isAnthropicClient = userAgent.includes('Claude') || Boolean(req.headers['anthropic-version']) || authHeader.startsWith('Bearer sk-ant');
+      if (isAnthropicClient) {
+        await handleAnthropicModels(this.orchestrator, res);
+        return;
+      }
       const nowSec = Math.floor(Date.now() / 1000);
       sendJson(res, 200, {
         object: 'list',
         data: MODEL_CATALOG.map((m) => ({ id: m.id, object: 'model', created: nowSec, owned_by: m.provider }))
       });
+      return;
+    }
+    if (req.method === 'POST' && pathname === '/v1/messages') {
+      await handleAnthropicMessages(this.orchestrator, req, res);
       return;
     }
     if (req.method === 'POST' && pathname === '/v1/chat/completions') {
@@ -455,7 +467,9 @@ export class HttpGatewayAdapter {
         return;
       }
       if (req.method === 'POST' && parts[3] === 'test') {
-        const probe = await this.orchestrator.testSlot(slotId);
+        const body = await readJsonBody(req);
+        const mode = body.mode === 'full' ? 'full' : 'ping';
+        const probe = await this.orchestrator.testSlot(slotId, mode);
         sendJson(res, probe.status === 404 ? 404 : 200, probe);
         return;
       }

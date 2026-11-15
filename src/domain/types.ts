@@ -1,4 +1,4 @@
-export type ProviderKind =
+﻿export type ProviderKind =
   | 'google-ai-studio'
   | 'google-oauth'
   | 'anthropic'
@@ -7,7 +7,8 @@ export type ProviderKind =
   | 'ollama'
   | 'openai-compat'
   | 'nvidia'
-  | 'freebuff';
+  | 'freebuff'
+  | 'wusrouter';
 
 export type AccountTier = 'free' | 'paid' | 'local';
 
@@ -55,9 +56,25 @@ export interface KeySlotMetadata {
   lastUsedAtIso: string | null;
 }
 
+export interface ToolDef {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+export type ToolChoice = { type: 'auto' | 'any' | 'none' } | { type: 'tool'; name: string };
+
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
+  toolCalls?: ToolCall[];
+  toolCallId?: string;
 }
 
 export interface RouteRequest {
@@ -67,6 +84,8 @@ export interface RouteRequest {
   messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
+  tools?: ToolDef[];
+  toolChoice?: ToolChoice;
 }
 
 export type RouteFailureCode =
@@ -105,10 +124,12 @@ export interface RouterConfig {
   defaultSensitivity: SensitivityLevel;
   httpPort: number;
   mcpEnabled?: boolean;
+  modelAliases?: Record<string, string>;
 }
 
 export interface CompletionResponse {
   text: string;
+  toolCalls?: ToolCall[];
   modelId: string;
   provider: ProviderKind;
   inputTokens: number;

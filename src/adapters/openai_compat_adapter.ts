@@ -11,10 +11,13 @@ import {
   safeJsonParse
 } from './gemini_adapter.ts';
 
-interface OpenAiChoice {
-  message?: { content?: string | null };
-  finish_reason?: string;
-}
+import {
+  buildOpenAiMessages,
+  buildOpenAiToolChoice,
+  buildOpenAiTools,
+  extractOpenAiResponse
+} from './openai_tools.ts';
+import type { OpenAiChoice } from './openai_tools.ts';
 
 interface OpenAiResponseJson {
   choices?: OpenAiChoice[];
@@ -59,14 +62,15 @@ export class OpenAICompatAdapter implements ProviderPort {
     }
 
     const firstChoice = parsed?.choices?.[0];
-    const rawText = (firstChoice?.message?.content ?? '').trim();
+    const { text: rawText, toolCalls } = extractOpenAiResponse(firstChoice);
     const text = stripAdsIfFreebuff(input.slot.provider, rawText);
-    if (!text) {
+    if (!text && (!toolCalls || toolCalls.length === 0)) {
       throw new ProviderRequestError(`Provedor ${input.slot.provider} retornou resposta vazia`, 502, null);
     }
 
     return {
       text,
+      ...(toolCalls && toolCalls.length > 0 ? { toolCalls } : {}),
       modelId: input.model.id,
       provider: input.slot.provider,
       inputTokens: safeInt(parsed?.usage?.prompt_tokens),
@@ -121,9 +125,15 @@ function buildOpenAiHeaders(slot: KeySlotMetadata, secret: string): Record<strin
 function buildOpenAiPayload(input: ProviderSendInput): Record<string, unknown> {
   const payload: Record<string, unknown> = {
     model: input.model.upstreamModelId,
-    messages: input.messages.map((m) => ({ role: m.role, content: m.content })),
+    messages: buildOpenAiMessages(input.messages),
     stream: false
   };
+  const tools = buildOpenAiTools(input.tools);
+  if (tools) {
+    payload.tools = tools;
+    const choice = buildOpenAiToolChoice(input.toolChoice);
+    if (choice !== undefined) payload.tool_choice = choice;
+  }
   if (typeof input.temperature === 'number' && Number.isFinite(input.temperature)) {
     payload.temperature = input.temperature;
   }

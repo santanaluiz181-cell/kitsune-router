@@ -10,7 +10,10 @@ const PROVIDER_LABEL = {
   deepseek: 'DeepSeek',
   openrouter: 'OpenRouter',
   ollama: 'Ollama Local',
-  'openai-compat': 'OpenAI compatível'
+  'openai-compat': 'OpenAI compatível',
+  wusrouter: 'WusRouter',
+  nvidia: 'NVIDIA NIM',
+  freebuff: 'Free Buffer'
 };
 const PROVIDER_PLACEHOLDER = {
   'google-oauth': 'ya29... ou JSON OAuth local',
@@ -19,7 +22,10 @@ const PROVIDER_PLACEHOLDER = {
   deepseek: 'sk-...',
   openrouter: 'sk-or-...',
   ollama: '(opcional para Ollama local)',
-  'openai-compat': 'sk-...'
+  'openai-compat': 'sk-...',
+  wusrouter: 'sk-...',
+  nvidia: 'nvapi-...',
+  freebuff: '(sem chave necessária)'
 };
 const TIER_LABEL = { free: 'gratuito', paid: 'pago', local: 'local' };
 const MOOD_STAMP = {
@@ -117,7 +123,8 @@ function renderSlots(slots) {
         <div class="slot-meta">${PROVIDER_LABEL[s.provider] || s.provider} · ${TIER_LABEL[s.tier]} · ${esc(s.maskedSecret)} · prio ${s.priority}${s.lastError ? ` · ${esc(s.lastError)}` : ''}</div>
       </div>
       <div class="slot-actions">
-        <button class="carimbo small" type="button" data-act="test">Testar</button>
+        <button class="carimbo small" type="button" data-act="test" data-mode="ping">Ping</button>
+        <button class="carimbo small" type="button" data-act="test" data-mode="full">Full (Tools)</button>
         <button class="carimbo small" type="button" data-act="toggle" aria-pressed="${s.enabled}">${s.enabled ? 'Desativar' : 'Ativar'}</button>
         <button class="carimbo small danger" type="button" data-act="delete" aria-label="Remover ${esc(s.label)}">Remover</button>
       </div></li>`;
@@ -302,9 +309,14 @@ $('slotList').addEventListener('click', async (e) => {
   const original = btn.textContent;
   try {
     if (act === 'test') {
-      btn.textContent = 'Testando';
-      const r = await api(`/api/slots/${encodeURIComponent(id)}/test`, { method: 'POST' });
-      syncMood(r.ok ? 'vault_save' : 'key_trash', r.detail, 2600, true);
+      const mode = btn.dataset.mode === 'full' ? 'full' : 'ping';
+      btn.textContent = mode === 'full' ? 'Full...' : 'Ping...';
+      const r = await api(`/api/slots/${encodeURIComponent(id)}/test`, {
+        method: 'POST',
+        body: JSON.stringify({ mode })
+      });
+      const badge = r.ok ? `[${r.latencyMs}ms] OK` : 'FALHA';
+      syncMood(r.ok ? 'vault_save' : 'key_trash', `${badge}: ${r.detail}`, 3200, true);
     } else if (act === 'toggle') {
       await api(`/api/slots/${encodeURIComponent(id)}/toggle`, { method: 'POST', body: JSON.stringify({ enabled: !slot.enabled }) });
     }

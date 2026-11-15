@@ -15,6 +15,8 @@ import type {
 } from '../domain/types.ts';
 import { ProviderRequestError } from '../ports/contracts.ts';
 import type { LedgerPort, ProviderPort, SlotCreateInput, VaultPort } from '../ports/contracts.ts';
+import { executeSlotTest } from './slot_tester.ts';
+import type { TestSlotOutcome } from './slot_tester.ts';
 
 export type RequestSource = 'mcp' | 'http-v1' | 'playground';
 
@@ -24,6 +26,8 @@ export interface ExecuteCompletionInput {
   policy?: RoutingPolicy;
   sensitivity?: SensitivityLevel;
   messages: RouteRequest['messages'];
+  tools?: RouteRequest['tools'];
+  toolChoice?: RouteRequest['toolChoice'];
   temperature?: number;
   maxTokens?: number;
   signal?: AbortSignal;
@@ -124,7 +128,8 @@ export class RouterOrchestrator {
       policy: patch.policy ?? current.policy,
       defaultSensitivity: patch.defaultSensitivity ?? current.defaultSensitivity,
       httpPort: isValidPort(patch.httpPort) ? patch.httpPort : current.httpPort,
-      mcpEnabled: patch.mcpEnabled !== undefined ? Boolean(patch.mcpEnabled) : (current.mcpEnabled !== false)
+      mcpEnabled: patch.mcpEnabled !== undefined ? Boolean(patch.mcpEnabled) : (current.mcpEnabled !== false),
+      modelAliases: patch.modelAliases && typeof patch.modelAliases === 'object' ? patch.modelAliases : current.modelAliases
     };
     await this.vault.saveConfig(next);
     this.emit({ type: 'config_updated', timestampIso: new Date().toISOString() });
@@ -172,28 +177,32 @@ export class RouterOrchestrator {
     this.emit(event);
   }
 
-  async testSlot(slotId: string): Promise<{ ok: boolean; status: number; detail: string; slot?: KeySlotMetadata }> {
+  async testSlot(
+    slotId: string,
+    mode: 'ping' | 'full' = 'ping'
+  ): Promise<TestSlotOutcome> {
     const slot = this.vault.getSlotMetadata(slotId);
     if (!slot) {
-      return { ok: false, status: 404, detail: 'Slot nao encontrado no cofre.' };
+      return { ok: false, status: 404, detail: 'Slot nao encontrado no cofre.', mode };
     }
     const secret = (await this.vault.getSecret(slot.id)) ?? '';
     if (slot.provider !== 'ollama' && !secret.trim()) {
-      return { ok: false, status: 400, detail: 'Chave secreta ausente no cofre.', slot };
+      return { ok: false, status: 400, detail: 'Chave secreta ausente no cofre.', slot, mode };
     }
 
-    this.emitMood('routing', `Testando ${slot.label}`, undefined, slot.label);
-    const probe = await this.provider.healthCheck(slot, secret);
-    const nowIso = new Date().toISOString();
-    const updated = probe.ok
-      ? markSlotHealthy(slot, nowIso)
-      : evaluateFailure(slot, probe.status, null, probe.detail);
+    this.emitMood('routing', `Testando ${slot.label} (${mode})`, undefined, slot.label);
+    const { outcome, updatedSlot } = await executeSlotTest(
+      slot,
+      secret,
+      mode,
+      this.provider,
+      this.vault,
+      (input) => this.executeCompletion(input)
+    );
 
-    await this.vault.updateSlotMetadata(updated);
-    this.emit({ type: 'slots_updated', timestampIso: nowIso });
-    this.emitMood(probe.ok ? 'vault_save' : 'key_trash', probe.detail, undefined, slot.label);
-
-    return { ok: probe.ok, status: probe.status, detail: probe.detail, slot: updated };
+    this.emit({ type: 'slots_updated', timestampIso: new Date().toISOString() });
+    this.emitMood(outcome.ok ? 'vault_save' : 'key_trash', outcome.detail, undefined, slot.label);
+    return outcome;
   }
 
   async executeCompletion(input: ExecuteCompletionInput): Promise<ExecuteCompletionResult> {
@@ -209,6 +218,8 @@ export class RouterOrchestrator {
       policy: input.policy ?? config.policy,
       sensitivity: input.sensitivity ?? config.defaultSensitivity,
       messages: enrichedMessages,
+      tools: input.tools,
+      toolChoice: input.toolChoice,
       temperature: input.temperature,
       maxTokens: input.maxTokens
     };
@@ -292,6 +303,8 @@ export class RouterOrchestrator {
         secret,
         model: candidate.model,
         messages: routeReq.messages,
+        tools: routeReq.tools,
+        toolChoice: routeReq.toolChoice,
         temperature: routeReq.temperature,
         maxTokens: routeReq.maxTokens,
         signal

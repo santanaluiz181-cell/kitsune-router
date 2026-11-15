@@ -1,4 +1,4 @@
-import { MODEL_CATALOG, findModelProfile, resolveModelForCustomProvider } from './model_catalog.ts';
+﻿import { MODEL_CATALOG, findModelProfile, resolveModelForCustomProvider } from './model_catalog.ts';
 import type {
   KeySlotMetadata,
   ModelProfile,
@@ -193,6 +193,19 @@ function buildCandidatesForSlot(
   }));
 }
 
+export function listActiveModels(slots: ReadonlyArray<KeySlotMetadata>): ModelProfile[] {
+  const found = new Map<string, ModelProfile>();
+  for (const slot of slots) {
+    if (!slot.enabled || slot.authInvalid) continue;
+    for (const m of MODEL_CATALOG) if (slotSupportsModel(slot, m)) found.set(m.id, m);
+    for (const id of slot.allowedModels) {
+      if (MODEL_CATALOG.some((m) => m.id === id || m.upstreamModelId === id)) continue;
+      const custom = resolveModelForCustomProvider(id, slot.provider);
+      if (!found.has(custom.id)) found.set(custom.id, custom);
+    }
+  }
+  return [...found.values()];
+}
 function slotSupportsModel(slot: KeySlotMetadata, model: ModelProfile): boolean {
   const googlePair =
     (slot.provider === 'google-oauth' && model.provider === 'google-ai-studio') ||

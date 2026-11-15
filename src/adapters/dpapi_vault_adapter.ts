@@ -31,7 +31,8 @@ const DEFAULT_CONFIG: RouterConfig = {
   policy: 'balanced',
   defaultSensitivity: 'public',
   httpPort: 4319,
-  mcpEnabled: true
+  mcpEnabled: true,
+  modelAliases: {}
 };
 
 export function resolveKitsuneDataDir(explicitDir?: string): string {
@@ -255,7 +256,10 @@ function loadVaultDocument(filePath: string): PersistedVaultDocument {
       policy: parsed.config?.policy || DEFAULT_CONFIG.policy,
       defaultSensitivity: parsed.config?.defaultSensitivity || DEFAULT_CONFIG.defaultSensitivity,
       httpPort: parsed.config?.httpPort || DEFAULT_CONFIG.httpPort,
-      mcpEnabled: parsed.config?.mcpEnabled !== false
+      mcpEnabled: parsed.config?.mcpEnabled !== false,
+      modelAliases: parsed.config?.modelAliases && typeof parsed.config.modelAliases === 'object'
+        ? parsed.config.modelAliases
+        : {}
     },
     slots: Array.isArray(parsed.slots) ? parsed.slots : [],
     secrets: parsed.secrets && typeof parsed.secrets === 'object' ? parsed.secrets : {}

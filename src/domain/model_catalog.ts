@@ -1,4 +1,4 @@
-import type { ModelProfile, ProviderKind } from './types.ts';
+﻿import type { ModelProfile, ProviderKind } from './types.ts';
 
 export const MODEL_CATALOG: ReadonlyArray<ModelProfile> = [
   {
@@ -240,7 +240,8 @@ export const DEFAULT_BASE_URLS: Readonly<Record<ProviderKind, string>> = {
   ollama: 'http://127.0.0.1:11434',
   'openai-compat': 'http://127.0.0.1:1234',
   nvidia: 'https://integrate.api.nvidia.com',
-  freebuff: 'https://api.codebuff.com'
+  freebuff: 'https://api.codebuff.com',
+  wusrouter: 'https://wusrouter.com/v1'
 };
 
 export function findModelProfile(modelId: string): ModelProfile | undefined {

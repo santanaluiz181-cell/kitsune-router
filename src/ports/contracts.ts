@@ -1,9 +1,11 @@
-import type {
+﻿import type {
   ChatMessage,
   CompletionResponse,
   KeySlotMetadata,
   ModelProfile,
   RouterConfig,
+  ToolChoice,
+  ToolDef,
   UsageLedgerEntry,
   UsageSummary
 } from '../domain/types.ts';
@@ -27,6 +29,8 @@ export interface ProviderSendInput {
   messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
+  tools?: ToolDef[];
+  toolChoice?: ToolChoice;
   signal?: AbortSignal;
 }
 

@@ -1,10 +1,8 @@
 import type { ChatMessage, CompletionResponse, KeySlotMetadata, ProviderKind } from '../domain/types.ts';
 import { ProviderRequestError } from '../ports/contracts.ts';
 import type { ProviderPort, ProviderSendInput } from '../ports/contracts.ts';
-
-interface GeminiPart {
-  text?: string;
-}
+import { buildGeminiContents, buildGeminiToolConfig, buildGeminiTools, extractGeminiParts } from './gemini_tools.ts';
+import type { GeminiPart } from './gemini_tools.ts';
 
 interface GeminiCandidate {
   content?: { parts?: GeminiPart[] };
@@ -58,19 +56,16 @@ export class GeminiApiAdapter implements ProviderPort {
     }
 
     const firstCandidate = parsed?.candidates?.[0];
-    const parts = firstCandidate?.content?.parts ?? [];
-    const text = parts
-      .map((part) => (typeof part.text === 'string' ? part.text : ''))
-      .join('')
-      .trim();
+    const { text, toolCalls } = extractGeminiParts(firstCandidate?.content?.parts ?? []);
 
-    if (!text) {
+    if (!text && toolCalls.length === 0) {
       const reason = firstCandidate?.finishReason || 'EMPTY_CANDIDATE';
       throw new ProviderRequestError(`Gemini retornou resposta vazia (${reason})`, 502, null);
     }
 
     return {
       text,
+      ...(toolCalls.length > 0 ? { toolCalls } : {}),
       modelId: input.model.id,
       provider: input.slot.provider,
       inputTokens: safeInt(parsed?.usageMetadata?.promptTokenCount),
@@ -108,21 +103,7 @@ export class GeminiApiAdapter implements ProviderPort {
 }
 
 function buildGeminiPayload(input: ProviderSendInput): Record<string, unknown> {
-  const systemTexts: string[] = [];
-  const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
-
-  for (const msg of input.messages) {
-    const clean = msg.content.trim();
-    if (!clean) continue;
-    if (msg.role === 'system') {
-      systemTexts.push(clean);
-      continue;
-    }
-    contents.push({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: clean }]
-    });
-  }
+  const { systemTexts, contents } = buildGeminiContents(input.messages, input.model.upstreamModelId);
 
   if (contents.length === 0) {
     contents.push({ role: 'user', parts: [{ text: 'Ping' }] });
@@ -142,6 +123,12 @@ function buildGeminiPayload(input: ProviderSendInput): Record<string, unknown> {
   }
   if (Object.keys(generationConfig).length > 0) {
     payload.generationConfig = generationConfig;
+  }
+  const tools = buildGeminiTools(input.tools);
+  if (tools) {
+    payload.tools = tools;
+    const toolConfig = buildGeminiToolConfig(input.toolChoice);
+    if (toolConfig) payload.toolConfig = toolConfig;
   }
   return payload;
 }

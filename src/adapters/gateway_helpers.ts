@@ -19,7 +19,10 @@ export const VALID_PROVIDERS = new Set<ProviderKind>([
   'deepseek',
   'openrouter',
   'ollama',
-  'openai-compat'
+  'openai-compat',
+  'nvidia',
+  'freebuff',
+  'wusrouter'
 ]);
 export const VALID_TIERS = new Set<AccountTier>(['free', 'paid', 'local']);
 export const VALID_POLICIES = new Set<RoutingPolicy>(['economy', 'balanced', 'frontier', 'manual']);
@@ -217,6 +220,7 @@ export function sendOpenAiSseCompletion(
 export function buildIntegrationSnippets(port: number, cliEntryPath: string) {
   return {
     baseUrlV1: `http://127.0.0.1:${port}/v1`,
+    claudeDesktopUrl: `http://127.0.0.1:${port}/v1`,
     pillUrl: `http://127.0.0.1:${port}/?mode=pill`,
     mcpConfigJson: JSON.stringify(
       {
