@@ -28,3 +28,10 @@ When `node src/cli.ts mcp` runs inside Antigravity or Codex:
 Never read browser cookies silently. Guide the user to open `http://127.0.0.1:4319` -> section `03 // COFRE DPAPI` and either:
 - Click **Importar sessao Gemini CLI** (explicit opt-in from `~/.gemini/oauth_creds.json`), or
 - Click **Abrir login oficial** to sign into Google, Gemini Web, Claude Console, or DeepSeek and paste their official token into Windows DPAPI encrypted storage.
+
+## Protocolo de Decisão de Roteamento (Gemini 3.8 Flash Low / Eco Mode)
+
+Ao operar no **Gemini 3.8 Flash (Low)** ou ao iniciar tarefas com alta demanda de tokens/cota, o agente DEVE acionar a caixa de múltipla escolha (`ask_question`) para o usuário decidir:
+1. **Ligar Kitsune Router MCP**: Ativa as APIs rotativas do cofre (Google AI Studio, WusRouter, NVIDIA, FreeBuffer, Ollama) com failover 429 e proteção de cotas da IDE.
+2. **Desligar MCP**: Mantém o fluxo direto no Gemini 3.8 Flash Low nativo da IDE, sem intermediários.
+
